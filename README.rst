@@ -3,6 +3,7 @@ clusterpluck
 Simple, user-friendly python package to isolate and analyse Gaia open cluster data.
 
 Modules:
+
 clusterpluck.search(ra, dec, radius)
   Return Gaia cone search centered on declared RA, DEC and of declared radius
 clusterpluck.search_name(name, radius)

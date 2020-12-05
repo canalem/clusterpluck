@@ -1,2 +1,4 @@
-test.*
+/test.py
 *.ipynb
+/plots/output.csv
+/clusterpluck/data/

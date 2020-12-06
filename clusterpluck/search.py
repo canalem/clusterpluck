@@ -11,7 +11,7 @@ if not os.path.isdir(download_dir + r'\clusterpluck\data'):
     os.mkdir(r'clusterpluck\data')
 
 
-def search(ra_coord, dec_coord, radius, d_near_plx=1000, d_far_plx=0.00001, pm_ra_min=-30, pm_ra_max=30, pm_dec_min=-30, pm_dec_max=30):
+def search(ra_coord, dec_coord, radius, d_near_plx=1000, d_far_plx=0.00001, pm_ra_min=-25, pm_ra_max=25, pm_dec_min=-25, pm_dec_max=25):
     query = """SELECT parallax, parallax_error, pmra, pmra_error, pmdec, pmdec_error, bp_rp, phot_g_mean_mag, ra, dec \
             FROM gaiadr2.gaia_source \
             WHERE CONTAINS(POINT('ICRS',gaiadr2.gaia_source.ra,gaiadr2.gaia_source.dec),CIRCLE('ICRS',{ra},{dec},{area}))=1 \

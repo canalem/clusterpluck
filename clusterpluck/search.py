@@ -72,10 +72,10 @@ def distance_range(plx, radius):
 def pm_range(ra_pm, dec_pm, pm_r):
     if type(ra_pm) != np.float64:
         ra_in = 0
-        pm_r = 30
+        pm_r = 25
     if type(dec_pm) != np.float64:
         dec_in = 0
-        pm_r = 30
+        pm_r = 25
     pm_ra_min = ra_pm - pm_r
     pm_ra_max = ra_pm + pm_r
     pm_dec_min = dec_pm - pm_r

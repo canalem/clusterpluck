@@ -14,7 +14,7 @@ if not os.path.isdir(home_dir + r'\clusterpluck\data'):
     os.mkdir(r'clusterpluck\data')
 
 
-def search(ra_input, dec_input, radius, ra_pm=0, dec_pm=0, pm_r=10, d_near=1, d_far=10000):
+def search(ra_input, dec_input, radius, ra_pm=0, dec_pm=0, pm_r=10, d_near=1, d_far=10000, dr=2):
     """Carry out a cone search using position, radius and optionally, proper motion and distance filters. Converts
     from HH MM SS to decimal degrees. Converts distances to parallax. Performs asynchronous query then saves table as
     a CSV. Prints search parameters as well as len(table). Arguments = RA, Dec, Radius, PM RA centroid,
@@ -28,14 +28,20 @@ def search(ra_input, dec_input, radius, ra_pm=0, dec_pm=0, pm_r=10, d_near=1, d_
     pm_dec_max = dec_pm + pm_r
     d_near_plx = (1 / d_near) * 1000
     d_far_plx = (1 / d_far) * 1000
+
+    if dr != 3:
+        gaia = 'gaiadr2.gaia_source'
+    else:
+        gaia = 'gaiaedr3.gaia_source'
+
     query = """SELECT parallax, parallax_error, pmra, pmra_error, pmdec, pmdec_error, bp_rp, phot_g_mean_mag, ra, dec \
-                FROM gaiadr2.gaia_source \
-                WHERE CONTAINS(POINT('ICRS',gaiadr2.gaia_source.ra,gaiadr2.gaia_source.dec),CIRCLE('ICRS',{ra},{dec},{area}))=1 \
+                FROM {g} \
+                WHERE CONTAINS(POINT('ICRS',{g}.ra,{g}.dec),CIRCLE('ICRS',{ra},{dec},{area}))=1 \
                 AND bp_rp IS NOT NULL \
                 AND parallax<{ig_near} AND parallax>{ig_far} \
                 AND visibility_periods_used>8 \
                 AND pmra<{ra_max} AND pmra>{ra_min} \
-                AND pmdec<{dec_max} AND pmdec>{dec_min};""".format(ra=str(ra_coord), dec=str(dec_coord),
+                AND pmdec<{dec_max} AND pmdec>{dec_min};""".format(g=gaia, ra=str(ra_coord), dec=str(dec_coord),
                                                                    area=str(radius), ig_near=str(d_near_plx),
                                                                    ig_far=str(d_far_plx),
                                                                    ra_min=str(pm_ra_min), ra_max=str(pm_ra_max),
@@ -49,10 +55,10 @@ def search(ra_input, dec_input, radius, ra_pm=0, dec_pm=0, pm_r=10, d_near=1, d_
         print('Number of stars:', len(r))
         print('RA:', ra_input, 'Dec:', dec_input, 'Rad:', radius)
         print('PM_RA:', ra_pm, 'PM_Dec:', dec_pm, 'PM_Rad:', pm_r)
-        print('Distance near:', d_near, 'pc & far:', d_far, 'pc')
+        print('Distance range: {:.0f} pc to {:.0f} pc'.format(d_near, d_far))
 
 
-def search_name(name, radius, pm_r=2):
+def search_name(name, radius, pm_r=2, dr=2):
     """Sends a cluster name, view radius and optional proper motion radius query to SIMBAD to download position,
     proper motion and distance information. Sends these to other functions to check for null values and so return
     defaults values. Once ready, sends values to search() function for Gaia query."""
@@ -71,7 +77,7 @@ def search_name(name, radius, pm_r=2):
     plx = plxval[0]
     d_near, d_far = distance_range(plx, radius)
     ra_pm, dec_pm, pm_r = pm_range(ra_pm, dec_pm, pm_r)
-    search(ra_coord, dec_coord, radius, ra_pm, dec_pm, pm_r, d_near, d_far)
+    search(ra_coord, dec_coord, radius, ra_pm, dec_pm, pm_r, d_near, d_far, dr)
 
 
 def distance_range(plx, radius):

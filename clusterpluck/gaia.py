@@ -14,7 +14,7 @@ if not os.path.isdir(home_dir + r'\clusterpluck\data'):
     os.mkdir(r'clusterpluck\data')
 
 
-def search(ra_input, dec_input, radius, ra_pm=0, dec_pm=0, pm_r=10, d_near=1, d_far=10000, dr=2):
+def search(ra_input, dec_input, radius=0.5, ra_pm=0, dec_pm=0, pm_r=10, d_near=1, d_far=10000, dr=2):
     """Carry out a cone search using position, radius and optionally, proper motion and distance filters. Converts
     from HH MM SS to decimal degrees. Converts distances to parallax. Performs asynchronous query then saves table as
     a CSV. Prints search parameters as well as len(table). Arguments = RA, Dec, Radius, PM RA centroid,
@@ -58,7 +58,7 @@ def search(ra_input, dec_input, radius, ra_pm=0, dec_pm=0, pm_r=10, d_near=1, d_
         print('Distance range: {:.0f} pc to {:.0f} pc'.format(d_near, d_far))
 
 
-def search_name(name, radius, pm_r=2, dr=2):
+def search_name(name, radius=0.5, pm_r=2, dr=2):
     """Sends a cluster name, view radius and optional proper motion radius query to SIMBAD to download position,
     proper motion and distance information. Sends these to other functions to check for null values and so return
     defaults values. Once ready, sends values to search() function for Gaia query."""

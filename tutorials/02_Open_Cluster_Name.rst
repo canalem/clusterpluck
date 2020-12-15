@@ -70,7 +70,7 @@ contains the following information:
 Any or all of these can be amended by using the general ``search()``
 function but that is for another tutorial.
 
-Now let’s create a pandas dataframe from the CSV file. This function
+Let’s create a pandas dataframe from the CSV file. This function
 also corrects and adds a few columns.
 
 .. code:: ipython3
@@ -125,10 +125,10 @@ cluster. Let’s see how the proper motion plot, ``pm_plot()``, looks.
 We can see the cluster’s stars form a group right in the middle
 of the plot! That means SIMBAD has given us good proper motion data and
 the default proper motion radius is acceptable. Any closer and we would
-lose relevent star data. Further away and there would be mnore chance of
+lose relevent star data. Further away and there would be more chance of
 unrelated stars included.
 
-Now let’s look at a plot of the cluster as a star map.
+Let’s look at a plot of the cluster as a star map.
 
 .. code:: ipython3
 
@@ -144,7 +144,7 @@ to their magnitude. It can help show us if our search radius is too wide
 or narrow. This looks pretty good as the cluster appears fully
 contained.
 
-Now let’s see if the distance filter has correct values.
+Let’s see if the distance filter has correct values.
 
 .. code:: ipython3
 

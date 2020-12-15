@@ -2,7 +2,7 @@ How to produce a CMD of a globular cluster
 ==========================================
 
 Globular clusters are very old, very far away and contain a **lot** of
-stars. Lets use clusterpluck to generate a pretty and interesting
+stars. Let's use clusterpluck to generate a pretty and interesting
 globular cluster CMD.
 
 .. code:: ipython3

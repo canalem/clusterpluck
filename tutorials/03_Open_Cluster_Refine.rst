@@ -54,7 +54,7 @@ young open cluster near the Orion nebula.
 
 
 
-.. image:: 03_Open_Cluster_Refine_files%5C03_Open_Cluster_Refine_6_0.png
+.. image:: img/03_Open_Cluster_Refine_6_0.png
 
 
 OK. Well we have a clustering but it’s off to one side. SIMBAD hasn’t
@@ -100,7 +100,7 @@ this case.**
 
 
 
-.. image:: 03_Open_Cluster_Refine_files%5C03_Open_Cluster_Refine_11_0.png
+.. image:: img/03_Open_Cluster_Refine_11_0.png
 
 
 Much better. The group is now central and seems well contained in the
@@ -112,7 +112,7 @@ plot. Next let’s check the map.
 
 
 
-.. image:: 03_Open_Cluster_Refine_files%5C03_Open_Cluster_Refine_13_0.png
+.. image:: img/03_Open_Cluster_Refine_13_0.png
 
 
 Well it appears that the cluster is in the middle of the map but there
@@ -146,7 +146,7 @@ the table and plot the map again.
 
 
 
-.. image:: 03_Open_Cluster_Refine_files%5C03_Open_Cluster_Refine_17_0.png
+.. image:: img/03_Open_Cluster_Refine_17_0.png
 
 
 This looks better. Now the distance filter.
@@ -157,7 +157,7 @@ This looks better. Now the distance filter.
 
 
 
-.. image:: 03_Open_Cluster_Refine_files%5C03_Open_Cluster_Refine_19_0.png
+.. image:: img/03_Open_Cluster_Refine_19_0.png
 
 
 How annoying! The default ``search()`` distances are more vague and so
@@ -181,7 +181,7 @@ explanitory.
     
 
 
-.. image:: 03_Open_Cluster_Refine_files%5C03_Open_Cluster_Refine_21_1.png
+.. image:: img/03_Open_Cluster_Refine_21_1.png
 
 
 Getting warmer. The distance filter normally has to be applied a few
@@ -206,7 +206,7 @@ We eventually get to the following search…
     
 
 
-.. image:: 03_Open_Cluster_Refine_files%5C03_Open_Cluster_Refine_23_1.png
+.. image:: img/03_Open_Cluster_Refine_23_1.png
 
 
 Finally we have got all of our keyword filters isolating the cluster
@@ -220,7 +220,7 @@ Now for the CMD and distance.
 
 
 
-.. image:: 03_Open_Cluster_Refine_files%5C03_Open_Cluster_Refine_25_0.png
+.. image:: img/03_Open_Cluster_Refine_25_0.png
 
 
 .. code:: ipython3

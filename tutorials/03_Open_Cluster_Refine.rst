@@ -63,7 +63,7 @@ amend it manually.
 
 Use the ``search()`` function which needs the position supplied in
 strings. As we suspect the cluster is being found, *just copy and paste
-the RA and Dec from above*. Then it is a case of entering values for the
+the RA and Dec from above* or use values from google (as long as they are in the same format). Then it is a case of entering values for the
 proper motion filter.
 
 First use the ``pmra`` and ``pmdec`` keywords to define the centre of

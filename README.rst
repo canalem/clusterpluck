@@ -10,7 +10,7 @@ Find them in the
 
 Packages Required
 -----------------
-  - 'astropy<https://github.com/astropy/astropy>`
+  - 'astropy<https://github.com/astropy/astropy>`_
   - pandas
   - numpy
   - seaborn

@@ -358,7 +358,7 @@ cluster. Let’s see how the proper motion plot, ``pm_plot()``, looks.
 
 
 
-.. image:: 02_Open_Cluster_Name_files%5C02_Open_Cluster_Name_11_0.png
+.. image:: 02_Open_Cluster_Name_files\5C02_Open_Cluster_Name_11_0.png
 
 
 We can see the cluster’s stars are forming a group right in the middle

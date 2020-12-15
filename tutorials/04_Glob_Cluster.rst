@@ -116,7 +116,7 @@ Surely they can’t all be in the cluster?
 
 
 
-.. image:: 04_Glob_Cluster_files%5C04_Glob_Cluster_12_0.png
+.. image:: img/04_Glob_Cluster_12_0.png
 
 
 .. code:: ipython3

@@ -1,8 +1,7 @@
 How to conduct a simple name search
 ===================================
 
-After installing the clusterpluck package, this tutorial demonstrates
-how to search for an open cluster using just its name.
+This tutorial demonstrates how to search for an open cluster using just its name.
 
 First, import the module and classes.
 

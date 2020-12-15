@@ -7,7 +7,6 @@ In its current form it can be used to find, download and plot star data in the f
 Tutorials
 ---------
 Find them in the tutorials_ folder.
-.. _tutorials: https://github.com/canalem/clusterpluck/tree/main/clusterpluck/tutorials
 
 Packages Required
 -----------------
@@ -17,3 +16,4 @@ Packages Required
   - seaborn
   - scipy
 .. _astropy: https://github.com/astropy/astropy
+.. _tutorials: https://github.com/canalem/clusterpluck/tree/main/clusterpluck/tutorials

@@ -10,10 +10,10 @@ Find jupyter notebooks in the tutorials_ folder.
 
 Packages Required
 -----------------
-  - astropy_
-  - pandas
-  - numpy
-  - seaborn
-  - scipy
+- astropy_
+- pandas
+- numpy
+- seaborn
+- scipy
 .. _astropy: https://github.com/astropy/astropy
 .. _tutorials: https://github.com/canalem/clusterpluck/tree/main/clusterpluck/tutorials

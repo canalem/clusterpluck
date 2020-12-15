@@ -6,7 +6,7 @@ In its current form it can be used to find, download and plot star data in the f
 
 Tutorials
 ---------
-Find jupyter notebooks in the tutorials_ folder.
+Find rst tutorial in the tutorials_ folder.
 
 Packages Required
 -----------------

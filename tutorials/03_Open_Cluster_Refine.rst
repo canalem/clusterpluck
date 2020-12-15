@@ -69,7 +69,7 @@ proper motion filter.
 First use the ``pmra`` and ``pmdec`` keywords to define the centre of
 the proper motion group. Looking at the plot above we can guess at about
 1.3 for the RA and 0.5 for the Dec. A radius of 1.5 should be wide
-enough, put this as the ``pm_r`` keyword.
+enough, put this as the ``pm_r`` keyword value.
 
 **Sometimes the proper motion lies completely outside of the plot. It’s
 worth checking with a much larger ``pm_r`` such as 10 (the default) in

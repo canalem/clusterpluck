@@ -11,6 +11,8 @@ Find them in the
 Packages Required
 -----------------
   - 'astropy<https://github.com/astropy/astropy>`_
+  `Python
+<http://www.python.org/>`_
   - pandas
   - numpy
   - seaborn

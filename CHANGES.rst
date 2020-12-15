@@ -11,7 +11,4 @@
 - Added some correction and conversions columns to output file (e.g. median offset parallax correction, B-V conversion, m_v conversion). Save as new CMD.
 - Added Plotting class.
 - Plots:
-    Distance KDE plot
-    Colour Magnitude Diagram scatter plot
-    Proper Motion scatter plot
-    Proper Motion KDE density plot
+    Distance KDE plot, Colour Magnitude Diagram scatter plot, Proper Motion scatter plot, Proper Motion KDE density plot.

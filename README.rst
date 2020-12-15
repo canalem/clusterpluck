@@ -7,7 +7,7 @@ In its current form it can be used to find, download and plot star data in the f
 Tutorials
 ---------
 Find them in the tutorials_ folder.
-.. tutorials: _clusterpluck\tutorials
+.. _tutorials: https://github.com/canalem/clusterpluck/tree/main/clusterpluck/tutorials
 
 Packages Required
 -----------------

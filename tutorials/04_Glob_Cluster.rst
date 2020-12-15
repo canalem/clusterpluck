@@ -88,10 +88,10 @@ distance range much wider. These clusters lie far away (> 10,000 pc) and
 Gaia struggles with parallaxes of stars further than 2000 pc. Best we
 try and include as many stars as we can.
 
-Note, as long as we keep the below arguments order we can just enter
+Note, as long as we keep the below argument order we can just enter
 strings and numbers.
 
-``search(ra, dec, radius, pmra, pmdec, pm_r, d_near, d_far)``
+- search(ra, dec, radius, pmra, pmdec, pm_r, d_near, d_far)
 
 .. code:: ipython3
 

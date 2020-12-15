@@ -110,7 +110,7 @@ We can check the dataframe using simple pandas commands.
     
 
 
-Once the data are loaded to a variable we can check to see if we have a
+Now the data are loaded we can check to see if we have a
 cluster. Let’s see how the proper motion plot, ``pm_plot()``, looks.
 
 .. code:: ipython3
@@ -122,7 +122,7 @@ cluster. Let’s see how the proper motion plot, ``pm_plot()``, looks.
 .. image:: img/02_Open_Cluster_Name_11_0.png
 
 
-We can see the cluster’s stars are forming a group right in the middle
+We can see the cluster’s stars form a group right in the middle
 of the plot! That means SIMBAD has given us good proper motion data and
 the default proper motion radius is acceptable. Any closer and we would
 lose relevent star data. Further away and there would be mnore chance of

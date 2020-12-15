@@ -14,18 +14,22 @@ if not os.path.isdir(home_dir + r'\clusterpluck\data'):
     os.mkdir(r'clusterpluck\data')
 
 
-def search(ra_input, dec_input, radius=0.5, ra_pm=0, dec_pm=0, pm_r=10, d_near=1, d_far=10000, dr=2):
+def search(ra_input, dec_input, radius=0.5, pmra=0, pmdec=0, pm_r=10, d_near=1, d_far=10000, dr=2):
     """Carry out a cone search using position, radius and optionally, proper motion and distance filters. Converts
     from HH MM SS to decimal degrees. Converts distances to parallax. Performs asynchronous query then saves table as
     a CSV. Prints search parameters as well as len(table). Arguments = RA, Dec, Radius, PM RA centroid,
     PM Dec Centroid, PM Radius, Distance Near and Distance Far."""
+    if d_near < 1:
+        d_near = 1
+    else:
+        pass
     coord = SkyCoord(ra=ra_input, dec=dec_input, unit=(u.hour, u.degree))
     ra_coord = coord.ra.deg
     dec_coord = coord.dec.deg
-    pm_ra_min = ra_pm - pm_r
-    pm_ra_max = ra_pm + pm_r
-    pm_dec_min = dec_pm - pm_r
-    pm_dec_max = dec_pm + pm_r
+    pm_ra_min = pmra - pm_r
+    pm_ra_max = pmra + pm_r
+    pm_dec_min = pmdec - pm_r
+    pm_dec_max = pmdec + pm_r
     d_near_plx = (1 / d_near) * 1000
     d_far_plx = (1 / d_far) * 1000
 
@@ -54,7 +58,7 @@ def search(ra_input, dec_input, radius=0.5, ra_pm=0, dec_pm=0, pm_r=10, d_near=1
     else:
         print('Number of stars:', len(r))
         print('RA:', ra_input, 'Dec:', dec_input, 'Rad:', radius)
-        print('PM_RA:', ra_pm, 'PM_Dec:', dec_pm, 'PM_Rad:', pm_r)
+        print('PM_RA:', pmra, 'PM_Dec:', pmdec, 'PM_Rad:', pm_r)
         print('Distance range: {:.0f} pc to {:.0f} pc'.format(d_near, d_far))
 
 
@@ -72,12 +76,12 @@ def search_name(name, radius=0.5, pm_r=2, dr=2):
     plxval = result_table['PLX_VALUE']
     ra_coord = raval[0]
     dec_coord = decval[0]
-    ra_pm = pmraval[0]
-    dec_pm = pmdecval[0]
+    pmra = pmraval[0]
+    pmdec = pmdecval[0]
     plx = plxval[0]
     d_near, d_far = distance_range(plx, radius)
-    ra_pm, dec_pm, pm_r = pm_range(ra_pm, dec_pm, pm_r)
-    search(ra_coord, dec_coord, radius, ra_pm, dec_pm, pm_r, d_near, d_far, dr)
+    pmra, pmdec, pm_r = pm_range(pmra, pmdec, pm_r)
+    search(ra_coord, dec_coord, radius, pmra, pmdec, pm_r, d_near, d_far, dr)
 
 
 def distance_range(plx, radius):
@@ -94,15 +98,15 @@ def distance_range(plx, radius):
     return d_near, d_far
 
 
-def pm_range(ra_pm, dec_pm, pm_r):
+def pm_range(pmra, pmdec, pm_r):
     """If SIMBAD returns blank value for proper motion, calculates a default range for search()."""
-    if type(ra_pm) != np.float64:
-        ra_pm = 0
+    if type(pmra) != np.float64:
+        pmra = 0
         pm_r = 30
-    if type(dec_pm) != np.float64:
-        dec_pm = 0
+    if type(pmdec) != np.float64:
+        pmdec = 0
         pm_r = 30
-    return ra_pm, dec_pm, pm_r
+    return pmra, pmdec, pm_r
 
 
 class Refine:

@@ -1,2 +1,4 @@
 /clusterpluck/data/
+/*.ipynb
 /tutorials/*.ipynb
+/tutorials/.ipynb_checkpoints/

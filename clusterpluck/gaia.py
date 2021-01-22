@@ -6,7 +6,7 @@ import os
 import pandas as pd
 import numpy as np
 import seaborn as sns
-from scipy.stats import gaussian_kde
+from .cp_clustering import k_means, dp
 
 home_dir = str(os.getcwd())
 download_dir = home_dir + r'\clusterpluck\data'
@@ -136,7 +136,7 @@ class Refine:
 
         data['m_v_tycho'] = data['phot_g_mean_mag'] - (
                 (0.02157 * (data['bp_rp'] ** 3)) - (0.2346 * (data['bp_rp'] ** 2)) - (
-                0.06629 * data['bp_rp']) - 0.01842)
+                    0.06629 * data['bp_rp']) - 0.01842)
 
         # Calculate (B - V) (Jordi, et al. 2010)
 
@@ -147,11 +147,41 @@ class Refine:
                                                                                         'bp_rp'] - 2169989399) ** (
                               1 / 3) + 1.4699
 
+        # Calculate cluster membership probability
+
+        centroids_pm = k_means(data[['pmra', 'pmdec']])
+        centroids_pos = k_means(data[['ra', 'dec']])
+
+        sd_x = pd.DataFrame.std(data['ra'])
+        sd_y = pd.DataFrame.std(data['dec'])
+        sd_z = pd.DataFrame.std(data['distance'])
+        sd_pmx = pd.DataFrame.std(data['pmra'])
+        sd_pmy = pd.DataFrame.std(data['pmdec'])
+        mean_d = data.loc[:, 'distance'].mean()
+        data['probx'] = (data['ra'] - centroids_pos[:, 0])
+        data['proby'] = (data['dec'] - centroids_pos[:, 1])
+        data['probz'] = np.abs((data['distance']) - mean_d)
+        data['probpmx'] = (data['pmra'] - centroids_pm[:, 0])
+        data['probpmy'] = (data['pmdec'] - centroids_pm[:, 1])
+        data['prob'] = (np.exp(-0.5 * ((data['probx'] / sd_x) ** 2 + (data['proby'] / sd_y) ** 2
+                                       + (data['probpmx'] / sd_pmx) ** 2 + (data['probpmy'] / sd_pmy) ** 2
+                                       + (data['probz'] / sd_z) ** 2))) * 100
+
+        data.drop(columns=['probx', 'proby', 'probz', 'probpmx', 'probpmy'], inplace=True)
+
         # Save to CSV
 
         data.to_csv(download_dir + r'\complete.csv', index=None)
 
         return data
+
+    def prob(self, pb):
+        """Refine dataframe by membership probability"""
+        df = self[self['prob'] > pb]
+        df.to_csv(download_dir + r'\high_prob.csv', index=None)
+        print('Number of stars with prob > {:.0f}%: {:.0f}'.format(pb, len(df)))
+
+        return df
 
     def pm_plot(self):
         """Produces Pandas scatter plot of proper motion values."""
@@ -172,30 +202,53 @@ class Refine:
 
 class Info:
     """Contains some astrophysical calculations."""
+
     def dist(self):
         """Uses gaussian kernel distribution of distance values and finds float value of peak as well as 5% and 95%
-        quartiles. Only accurate < 1 kpc."""
-        density = gaussian_kde(self['distance'])
-        lq = self.loc[:, 'distance'].quantile(0.05)
-        uq = self.loc[:, 'distance'].quantile(0.95)
-        xs = np.linspace(lq, uq, 1000)
-        ys = density(xs)
-        dist_index = np.argmax(ys)
-        cluster_d_p = xs[dist_index]
+        quartiles."""
+        cluster_d_p = dp(self['distance'], self.loc[:, 'distance'].quantile(0.05),
+                         self.loc[:, 'distance'].quantile(0.95))
         print(r'Distance: {:.0f} pc'.format(cluster_d_p))
-        print(r'5%: {:.0f} pc - 95%: {:.0f}'.format(lq, uq))
+        print(r'5%: {:.0f} pc - 95%: {:.0f}'.format(self.loc[:, 'distance'].quantile(0.05),
+                                                    self.loc[:, 'distance'].quantile(0.95)))
 
     def trgb(self, eb_v):
-        """Rough estimate of distance via the Tip of the Reg Giant Branch standard candle (TRGB) from globular
-        cluster plot."""
+        """Estimate of distance via the Tip of the Reg Giant Branch standard candle (TRGB) from globular
+        cluster plot. Currently just """
         df = self.nsmallest(5, 'm_v_tycho')
         mag = df['m_v_tycho'].mean()
         cluster_d_p = 10 ** ((mag + 3 + 5 - (3.1 * eb_v)) / 5)
         print(r'Distance: {:.0f} pc'.format(cluster_d_p))
 
+    def radial_velocity(self):
+        """Estimate of the radial velocity of the cluster center based on the ."""
+        # Calculate radial velocity in km per sec
+        r_v_mas = np.mean(np.sqrt(self['pmra'] ** 2 + self['pmdec'] ** 2))
+        # Convert radial velocity from mas per year to rad per sec.
+        r_v_rad = r_v_mas * 1.537289632e-16
+        # Convert distance from pc to km
+        cluster_d_p = dp(self['distance'], self.loc[:, 'distance'].quantile(0.05),
+                         self.loc[:, 'distance'].quantile(0.95))
+        d_km = cluster_d_p * 3.086e13
+        # Perform final calculation
+        r_v = d_km * (np.tan(r_v_rad / 2))
+        # Calculate angle of rv
+        centroids_pm = k_means(self[['pmra', 'pmdec']])
+        centroids_pos = k_means(self[['ra', 'dec']])
+        cpm = centroids_pm[0]
+        cp = centroids_pos[0]
+        r_v_theta = np.arctan(cpm[1] / cpm[0])
+        r_v_theta = r_v_theta * 180 / np.pi
+        if cpm[0] > 0:
+            r_v_theta = 90 - r_v_theta
+        else:
+            r_v_theta = 270 - r_v_theta
+        print(r'Radial Vel: %.1f km^s | Angle: %.0f deg' % (r_v, r_v_theta))
+
 
 class Plotting:
     """Contains some further plotting functions."""
+
     def cmd(self):
         """Produces a Pandas scatter plot as a Colour Magnitude Diagram using original Gaia filters."""
         ax = self.plot.scatter(x='bp_rp', y='phot_g_mean_mag', s=3, alpha=0.25, figsize=(8, 8))
@@ -206,4 +259,3 @@ class Plotting:
         filters (Tycho Vmag and Johnson B-V colour index)."""
         ax = self.plot.scatter(x='b_v', y='m_v_tycho', s=3, alpha=0.25, figsize=(8, 8))
         ax.invert_yaxis()
-

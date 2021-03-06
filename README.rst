@@ -18,4 +18,4 @@ Packages Required
 - seaborn
 - scipy
 .. _astropy: https://github.com/astropy/astropy
-.. _tutorials: https://github.com/canalem/clusterpluck/tree/main/clusterpluck/tutorials
+.. _tutorials: https://github.com/canalem/clusterpluck/tree/main/tutorials

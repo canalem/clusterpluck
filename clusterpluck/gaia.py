@@ -51,7 +51,7 @@ def search(ra_input, dec_input, radius=0.5, pmra=0, pmdec=0, pm_r=10, d_near=1, 
                                                                    ra_min=str(pm_ra_min), ra_max=str(pm_ra_max),
                                                                    dec_min=str(pm_dec_min), dec_max=str(pm_dec_max))
     job1 = Gaia.launch_job_async(query, dump_to_file=True, output_format="csv",
-                                 output_file=download_dir + '\output.csv')
+                                 output_file=download_dir + r'\output.csv')
     r = job1.get_results()
     if len(r) == 0:
         print('No values returned')
@@ -109,71 +109,74 @@ def pm_range(pmra, pmdec, pm_r):
     return pmra, pmdec, pm_r
 
 
+def load():
+    """Loads initial output CSV from search() and adjusts/converts some values for plotting, etc."""
+    # Load output table
+
+    data = pd.read_csv(download_dir + r'\output.csv')
+    data = data.sort_values(by=['phot_g_mean_mag']).reset_index(drop=True)
+
+    # Adjust parallax for median offset (Lindegren, et al. 2018)
+    data['parallax'] = data['parallax'] + 0.029
+
+    # Adjust parallax error to 2 sigma confidence level
+
+    data['parallax_error'] = data['parallax_error'] * 2
+
+    # Find trivial distance and error.
+
+    data['distance'] = 1 / (data['parallax'] / 1000)
+    data['distance_error'] = data['distance'] - (1 / ((data['parallax'] + data['parallax_error']) / 1000))
+
+    # Calculate M_v Tycho (Jordi, et al. 2010)
+
+    data['m_v_tycho'] = data['phot_g_mean_mag'] - (
+            (0.02157 * (data['bp_rp'] ** 3)) - (0.2346 * (data['bp_rp'] ** 2)) - (
+            0.06629 * data['bp_rp']) - 0.01842)
+
+    # Calculate (B - V) (Jordi, et al. 2010)
+
+    data['b_v'] = 0.0043372 * (316.97 * np.sqrt(
+        10046700000000 * data['bp_rp'] ** 2 - 43399787980000 * data['bp_rp'] + 701395108514151) + 1004670000 * data[
+                                   'bp_rp'] - 2169989399) ** (1 / 3) - 17506 / (316.97 * np.sqrt(
+        10046700000000 * data['bp_rp'] ** 2 - 43399787980000 * data['bp_rp'] + 701395108514151) + 1004670000 * data[
+                                                                                    'bp_rp'] - 2169989399) ** (
+                          1 / 3) + 1.4699
+
+    # Calculate cluster membership probability
+
+    centroids_pm = k_means(data[['pmra', 'pmdec']])
+    centroids_pos = k_means(data[['ra', 'dec']])
+
+    sd_x = pd.DataFrame.std(data['ra'])
+    sd_y = pd.DataFrame.std(data['dec'])
+    sd_z = pd.DataFrame.std(data['distance'])
+    sd_pmx = pd.DataFrame.std(data['pmra'])
+    sd_pmy = pd.DataFrame.std(data['pmdec'])
+    mean_d = data.loc[:, 'distance'].mean()
+    data['probx'] = (data['ra'] - centroids_pos[:, 0])
+    data['proby'] = (data['dec'] - centroids_pos[:, 1])
+    data['probz'] = np.abs((data['distance']) - mean_d)
+    data['probpmx'] = (data['pmra'] - centroids_pm[:, 0])
+    data['probpmy'] = (data['pmdec'] - centroids_pm[:, 1])
+    data['prob'] = (np.exp(-0.5 * ((data['probx'] / sd_x) ** 2 + (data['proby'] / sd_y) ** 2
+                                   + (data['probpmx'] / sd_pmx) ** 2 + (data['probpmy'] / sd_pmy) ** 2
+                                   + (data['probz'] / sd_z) ** 2))) * 100
+
+    data.drop(columns=['probx', 'proby', 'probz', 'probpmx', 'probpmy'], inplace=True)
+
+    # Save to CSV
+
+    data.to_csv(download_dir + r'\complete.csv', index=None)
+
+    return data
+
+
 class Refine:
     """Contains functions to aid more precise filtering of search()"""
 
-    def load(self):
-        """Loads initial output CSV from search() and adjusts/converts some values for plotting, etc."""
-        # Load output table
-
-        data = pd.read_csv(download_dir + '\output.csv')
-        data = data.sort_values(by=['phot_g_mean_mag'])
-        data = data.reset_index(drop=True)
-
-        # Adjust parallax for median offset (Lindegren, et al. 2018)
-        data['parallax'] = data['parallax'] + 0.029
-
-        # Adjust parallax error to 2 sigma confidence level
-
-        data['parallax_error'] = data['parallax_error'] * 2
-
-        # Find trivial distance and error.
-
-        data['distance'] = 1 / (data['parallax'] / 1000)
-        data['distance_error'] = data['distance'] - (1 / ((data['parallax'] + data['parallax_error']) / 1000))
-
-        # Calculate M_v Tycho (Jordi, et al. 2010)
-
-        data['m_v_tycho'] = data['phot_g_mean_mag'] - (
-                (0.02157 * (data['bp_rp'] ** 3)) - (0.2346 * (data['bp_rp'] ** 2)) - (
-                    0.06629 * data['bp_rp']) - 0.01842)
-
-        # Calculate (B - V) (Jordi, et al. 2010)
-
-        data['b_v'] = 0.0043372 * (316.97 * np.sqrt(
-            10046700000000 * data['bp_rp'] ** 2 - 43399787980000 * data['bp_rp'] + 701395108514151) + 1004670000 * data[
-                                       'bp_rp'] - 2169989399) ** (1 / 3) - 17506 / (316.97 * np.sqrt(
-            10046700000000 * data['bp_rp'] ** 2 - 43399787980000 * data['bp_rp'] + 701395108514151) + 1004670000 * data[
-                                                                                        'bp_rp'] - 2169989399) ** (
-                              1 / 3) + 1.4699
-
-        # Calculate cluster membership probability
-
-        centroids_pm = k_means(data[['pmra', 'pmdec']])
-        centroids_pos = k_means(data[['ra', 'dec']])
-
-        sd_x = pd.DataFrame.std(data['ra'])
-        sd_y = pd.DataFrame.std(data['dec'])
-        sd_z = pd.DataFrame.std(data['distance'])
-        sd_pmx = pd.DataFrame.std(data['pmra'])
-        sd_pmy = pd.DataFrame.std(data['pmdec'])
-        mean_d = data.loc[:, 'distance'].mean()
-        data['probx'] = (data['ra'] - centroids_pos[:, 0])
-        data['proby'] = (data['dec'] - centroids_pos[:, 1])
-        data['probz'] = np.abs((data['distance']) - mean_d)
-        data['probpmx'] = (data['pmra'] - centroids_pm[:, 0])
-        data['probpmy'] = (data['pmdec'] - centroids_pm[:, 1])
-        data['prob'] = (np.exp(-0.5 * ((data['probx'] / sd_x) ** 2 + (data['proby'] / sd_y) ** 2
-                                       + (data['probpmx'] / sd_pmx) ** 2 + (data['probpmy'] / sd_pmy) ** 2
-                                       + (data['probz'] / sd_z) ** 2))) * 100
-
-        data.drop(columns=['probx', 'proby', 'probz', 'probpmx', 'probpmy'], inplace=True)
-
-        # Save to CSV
-
-        data.to_csv(download_dir + r'\complete.csv', index=None)
-
-        return data
+    def __init__(self):
+        self.plot = None
 
     def prob(self, pb):
         """Refine dataframe by membership probability"""
@@ -202,6 +205,10 @@ class Refine:
 
 class Info:
     """Contains some astrophysical calculations."""
+
+    def __init__(self):
+        self.loc = None
+        self.nsmallest = None
 
     def dist(self):
         """Uses gaussian kernel distribution of distance values and finds float value of peak as well as 5% and 95%
@@ -234,9 +241,7 @@ class Info:
         r_v = d_km * (np.tan(r_v_rad / 2))
         # Calculate angle of rv
         centroids_pm = k_means(self[['pmra', 'pmdec']])
-        centroids_pos = k_means(self[['ra', 'dec']])
         cpm = centroids_pm[0]
-        cp = centroids_pos[0]
         r_v_theta = np.arctan(cpm[1] / cpm[0])
         r_v_theta = r_v_theta * 180 / np.pi
         if cpm[0] > 0:
@@ -248,6 +253,9 @@ class Info:
 
 class Plotting:
     """Contains some further plotting functions."""
+
+    def __init__(self):
+        self.plot = None
 
     def cmd(self):
         """Produces a Pandas scatter plot as a Colour Magnitude Diagram using original Gaia filters."""

@@ -9,6 +9,8 @@ globular cluster CMD.
 
     import clusterpluck as cp
     from clusterpluck.gaia import Refine, Info, Plotting
+    import warnings
+    warnings.filterwarnings("ignore")
 
 
 .. parsed-literal::

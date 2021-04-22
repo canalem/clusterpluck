@@ -388,7 +388,7 @@ Now let’s look at a plot of the cluster as a star map.
 
 
 
-.. image:: 02_Open_Cluster_Name_files%5C02_Open_Cluster_Name_13_0.png
+.. image:: img/02_Open_Cluster_Name_13_0.png
 
 
 This plot shows a star map of the search with the star size proportional
@@ -404,7 +404,7 @@ Now let’s see if the distance filter has correct values.
 
 
 
-.. image:: 02_Open_Cluster_Name_files%5C02_Open_Cluster_Name_15_0.png
+.. image:: img/02_Open_Cluster_Name_15_0.png
 
 
 There is a very clear, tall peak in the middle of our graph that tells
@@ -427,7 +427,7 @@ B-V colour index…
 
 
 
-.. image:: 02_Open_Cluster_Name_files%5C02_Open_Cluster_Name_17_0.png
+.. image:: img/02_Open_Cluster_Name_17_0.png
 
 
 … and we have a beautiful CMD plot with the classic *main sequence* of

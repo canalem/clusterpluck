@@ -2,9 +2,9 @@
 
 # -- Project information
 
-project = 'Lumache'
-copyright = '2021, Graziella'
-author = 'Graziella'
+project = 'clusterpluck'
+copyright = '2022, Marc Canale'
+author = 'Marc Canale'
 
 release = '0.1'
 version = '0.1.0'

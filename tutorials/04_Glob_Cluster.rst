@@ -9,6 +9,8 @@ globular cluster CMD.
 
     import clusterpluck as cp
     from clusterpluck.gaia import Refine, Info, Plotting
+    import warnings
+    warnings.filterwarnings("ignore")
 
 
 .. parsed-literal::
@@ -26,7 +28,7 @@ globular cluster CMD.
     
 
 Let’s look at a big, bright cluster called M5 in the constellation
-Serpens using the simple ``search_name()`` function.
+Serpens using the simple ``search_name()`` method.
 
 .. code:: ipython3
 

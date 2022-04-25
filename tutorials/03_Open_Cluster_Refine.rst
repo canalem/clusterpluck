@@ -10,6 +10,8 @@ As always, first import the module/classes.
 
     import clusterpluck as cp
     from clusterpluck.gaia import Refine, Info, Plotting
+    import warnings
+    warnings.filterwarnings("ignore")
 
 
 .. parsed-literal::
@@ -61,7 +63,7 @@ OK. Well we have a clustering but it’s off to one side. SIMBAD hasn’t
 given us proper motion info that matches Gaia’s. We’ll just have to
 amend it manually.
 
-Use the ``search()`` function which needs the position supplied in
+Use the ``search()`` method which needs the position supplied in
 strings. As we suspect the cluster is being found, *just copy and paste
 the RA and Dec from above* or use values from google (as long as they are in the same format). Then it is a case of entering values for the
 proper motion filter.
@@ -234,7 +236,7 @@ Now for the CMD and distance.
     5%: 332 pc - 95%: 432
     
 
-The ``search()`` function can be used to look at any part of the sky
+The ``search()`` method can be used to look at any part of the sky
 with Gaia and by using the argument filters all sorts of clusters can be
 plotted. Maybe even ones that haven’t been found before.
 

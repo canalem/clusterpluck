@@ -6,10 +6,6 @@ In its current form it can be used to find, download and plot star data in the f
 
 Currently working on making available as package for initial alpha release.
 
-Tutorials
----------
-Find .rst format tutorials in the tutorials_ folder.
-
 Packages Required
 -----------------
 - astropy_
@@ -18,4 +14,3 @@ Packages Required
 - seaborn
 - scipy
 .. _astropy: https://github.com/astropy/astropy
-.. _tutorials: https://github.com/canalem/clusterpluck/tree/main/tutorials

@@ -47,6 +47,16 @@ setup(
     author = 'Marc Canale',
     author_email = 'marc.canale@hotmail.com',
     download_url = 'https://github.com/canalem/clusterpluck',
+    classifiers=[
+        'Intended Audience :: Science/Research/Education',
+        'License :: None',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
+        'Topic :: Scientific/Engineering :: Astronomy',
+        'Topic :: Software Development :: Libraries :: Python Modules'
+    ],
+    packages=['clusterpluck'],
     install_requires=[
           'numpy<1.23',
           'bokeh<2.4.0,>=2.3.0',

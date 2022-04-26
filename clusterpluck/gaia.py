@@ -6,6 +6,15 @@ import os
 import pandas as pd
 import numpy as np
 import seaborn as sns
+from matplotlib import pyplot as plt
+from ipywidgets import interact
+import ipywidgets as widgets
+import scipy.stats as stats
+import pickle
+from PyAstronomy import pyasl
+from pylab import *
+from matplotlib.pyplot import axes
+from scipy.stats import gaussian_kde
 from .cp_clustering import k_means, dp
 
 home_dir = str(os.getcwd())
@@ -74,13 +83,24 @@ def search_name(name, radius=0.5, pm_r=2, dr=2):
     pmraval = result_table['PMRA']
     pmdecval = result_table['PMDEC']
     plxval = result_table['PLX_VALUE']
+    fe_hvalue = result_table['Fe_H_Fe_H']
     ra_coord = raval[0]
     dec_coord = decval[0]
     pmra = pmraval[0]
     pmdec = pmdecval[0]
     plx = plxval[0]
+    fe_h = fe_hvalue[0]
     d_near, d_far = distance_range(plx, radius)
     pmra, pmdec, pm_r = pm_range(pmra, pmdec, pm_r)
+
+    # Initialise data and store values in pickle
+
+    simbad_stats = {'name': name, 'ra': ra_coord, 'dec': dec_coord, 'radius': radius, 'pmra': pmra, 'pmdec': pmdec,
+                    'pm_radius': pm_r, 'plx_value': plx, 'fe_h': fe_h}
+    pickle_out = open("dict.pickle", "wb")
+    pickle.dump(simbad_stats, pickle_out)
+    pickle_out.close()
+
     search(ra_coord, dec_coord, radius, pmra, pmdec, pm_r, d_near, d_far, dr)
 
 
@@ -143,6 +163,13 @@ def load():
                                                                                     'bp_rp'] - 2169989399) ** (
                           1 / 3) + 1.4699
 
+    # Calculate absolute magnitudes, temperature and luminosity
+
+    data['abs'] = (data['m_v_tycho'] + 5 + (5 * np.log10(data['parallax'] / 1000)))
+    ball = pyasl.BallesterosBV_T()
+    data['t_k'] = ball.bv2T(data['bp_rp'])
+    data['lum_s'] = (3.85e26 * (10 ** ((4.77 - data['abs']) / 2.5))) / 3.38e26
+
     # Calculate cluster membership probability
 
     centroids_pm = k_means(data[['pmra', 'pmdec']])
@@ -164,6 +191,27 @@ def load():
                                    + (data['probz'] / sd_z) ** 2))) * 100
 
     data.drop(columns=['probx', 'proby', 'probz', 'probpmx', 'probpmy'], inplace=True)
+
+    # Calculate some stats and save to file
+
+    mu = np.mean(data['distance'])
+    sigma = np.std(data['distance'])
+    dist_med = np.median(data['distance'])
+    conf = stats.norm.interval(0.95, loc=mu, scale=sigma)
+    density = gaussian_kde(data['distance'])
+    d_near_pc = data['distance'].min()
+    d_far_pc = data['distance'].max()
+    xs = np.linspace(d_near_pc, d_far_pc, 1000)
+    ys = density(xs)
+    dist_index = np.argmax(ys)
+    cluster_d_p = xs[dist_index]
+
+    # Initialise data and store in pickle
+
+    hist_stats = {'mu': mu, 'sigma': sigma, 'dist_med': dist_med, 'conf': conf, 'cluster_d': cluster_d_p}
+    pickle_out = open("dict.pickle", "wb")
+    pickle.dump(hist_stats, pickle_out)
+    pickle_out.close()
 
     # Save to CSV
 
@@ -202,6 +250,18 @@ class Refine:
         """Produces 1D Seaborn kernel distribution plot of distance values. Peak shows approx. cluster distance."""
         sns.kdeplot(self['distance'])
 
+    def d_hist(self):
+        """Produces histogram of object distances derived from parallax."""
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        n, bins, patches = ax.hist(self['distance'], bins=50)
+        nmax = np.max(n)
+        arg_max = None
+        for j, _n in enumerate(n):
+            if _n == nmax:
+                arg_max = j
+                break
+
 
 class Info:
     """Contains some astrophysical calculations."""
@@ -221,14 +281,22 @@ class Info:
 
     def trgb(self, eb_v):
         """Estimate of distance via the Tip of the Reg Giant Branch standard candle (TRGB) from globular
-        cluster plot. Currently just """
+        cluster plot. Needs E(B-V) value - from 'The Globular Cluster Database'?. Currently just in beta."""
         df = self.nsmallest(5, 'm_v_tycho')
         mag = df['m_v_tycho'].mean()
         cluster_d_p = 10 ** ((mag + 3 + 5 - (3.1 * eb_v)) / 5)
         print(r'Distance: {:.0f} pc'.format(cluster_d_p))
 
+    def eb_v(self, dist_x):
+        """Estimate of extinction via the Tip of the Reg Giant Branch standard candle (TRGB) from globular
+        cluster plot. Uses distance as measured from the parallax!!! Not accurate yet. Currently just in beta."""
+        df = self.nsmallest(5, 'm_v_tycho')
+        mag = df['m_v_tycho'].mean()
+        eb_v = (- (5 * log10(dist_x) - (mag + 3 + 5))) / 3.1
+        print(r'E(B - V): {:.2f}'.format(eb_v))
+
     def radial_velocity(self):
-        """Estimate of the radial velocity of the cluster center based on the ."""
+        """Estimate of the radial velocity of the cluster center."""
         # Calculate radial velocity in km per sec
         r_v_mas = np.mean(np.sqrt(self['pmra'] ** 2 + self['pmdec'] ** 2))
         # Convert radial velocity from mas per year to rad per sec.
@@ -267,3 +335,175 @@ class Plotting:
         filters (Tycho Vmag and Johnson B-V colour index)."""
         ax = self.plot.scatter(x='b_v', y='m_v_tycho', s=3, alpha=0.25, figsize=(8, 8))
         ax.invert_yaxis()
+
+    def d_hist(self):
+        """Produces histogram of object distances derived from parallax with information plotted such as mean, median
+        and mode, etc."""
+        pickle_in = open("dict.pickle", "rb")
+        hist_stats = pickle.load(pickle_in)
+        sigma = hist_stats['sigma']
+        mu = hist_stats['mu']
+        dist_med = hist_stats['dist_med']
+        fig = plt.figure()
+        ax = fig.add_subplot()
+        n, bins, patches = ax.hist(self['distance'], bins=50)
+        nmax = np.max(n)
+        arg_max = None
+        for j, _n in enumerate(n):
+            if _n == nmax:
+                arg_max = j
+                break
+        x_max = bins[arg_max]
+        plt.close()
+        fig, ax = plt.subplots()
+        n, bins, patches = ax.hist(self['distance'], bins='auto', density=1, color='w', edgecolor='black')
+        y = ((1 / (np.sqrt(2 * np.pi) * sigma)) * np.exp(-0.5 * (1 / sigma * (bins - mu)) ** 2))
+        plt.axvline(mu, color='blue', linestyle='--', linewidth=1)
+        plt.axvline(dist_med, color='green', linestyle=':', linewidth=1)
+        plt.axvline(x_max, color='yellow', linestyle=':', linewidth=1)
+        ax.plot(bins, y, color='blue', linestyle='--', linewidth=1)
+        ax.set_xlabel('Distance / pc')
+        plt.yticks([])
+        ax.set_title('Distance to Stars in Search Area', fontsize=12)
+        fig.tight_layout()
+        textstr = '\n'.join((
+            r'$\mu=%.2f$' % (mu,),
+            r'$\sigma=%.2f$' % (sigma,),
+            r'median=%.2f' % (dist_med,),
+            r'mode=%.2f' % (x_max,)))
+        ax.text(0.85, 0.95, textstr, transform=ax.transAxes, fontsize=7, verticalalignment='top')
+
+    def three_d(self):
+        """Produces 3D plot of objects. If used with jupyter notebook, %matplotlib qt or %matplotlib notebook is
+        required for interactivity."""
+        dot_size = ((np.log10((self['lum_s'] * 1000))) - 2) ** 4
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1, projection="3d")
+        x = self['ra']
+        y = self['distance']
+        z = self['dec']
+        ax.scatter(x, y, z, marker='o', s=dot_size, c='blue')
+        plt.show()
+
+    def iso_match(self):
+        """Create adjustable CMD diagram to determine approximate cluster age and reddening"""
+
+        pickle_in = open("dict.pickle", "rb")
+        iso_stats = pickle.load(pickle_in)
+        fig9, ax_cmd = plt.subplots()
+        iso = pd.read_csv(download_dir + r'\iso\iso_00.csv')
+        plt.subplots_adjust(left=0.2, bottom=0.25)
+        dm = (-5) + 5 * np.log10(iso_stats['cluster_d'])
+        g = self['m_v_tycho']
+        r = self['b_v']
+        dminit = dm
+        brinit = 0
+
+        ax_g = axes([0.25, 0.05, 0.65, 0.03])
+        ax_br = axes([0.25, 0.10, 0.65, 0.03])
+
+        sdm = Slider(ax_g, 'Dist_Mod', 0, 20, valinit=dminit)
+        sbr = Slider(ax_br, 'Reddening', 0, 1.0, valinit=brinit)
+        plt.rcParams['lines.linewidth'] = 0.5
+        plt.rcParams['lines.linestyle'] = '--'
+        ax_cmd.set_ylim(-5, 9)
+        ax_cmd.invert_yaxis()
+
+        ax_cmd.plot(iso['B_V_100'], iso['V_100'], label=r'1x$10^{8}$ yr')
+        ax_cmd.plot(iso['B_V_200'], iso['V_200'], c='Black', alpha=0.1)
+        ax_cmd.plot(iso['B_V_300'], iso['V_300'], c='Black', alpha=0.1)
+        ax_cmd.plot(iso['B_V_400'], iso['V_400'], c='Black', alpha=0.1)
+        ax_cmd.plot(iso['B_V_500'], iso['V_500'], label=r'5x$10^{8}$ yr')
+        ax_cmd.plot(iso['B_V_600'], iso['V_600'], c='Black', alpha=0.1)
+        ax_cmd.plot(iso['B_V_700'], iso['V_700'], c='Black', alpha=0.1)
+        ax_cmd.plot(iso['B_V_800'], iso['V_800'], c='Black', alpha=0.1)
+        ax_cmd.plot(iso['B_V_900'], iso['V_900'], c='Black', alpha=0.1)
+        ax_cmd.plot(iso['B_V_1000'], iso['V_1000'], label=r'1x$10^{9}$ yr')
+        ax_cmd.scatter(r, g - dm, s=5, marker='s', c='w', edgecolor='black')
+        leg = ax_cmd.legend()
+        ax_cmd.set_ylabel(r'$M_{V}$')
+        ax_cmd.set_xlabel(r'$B-V$')
+
+        def update(val):
+            ax_cmd.cla()
+            ax_cmd.set_ylim(-5, 9)
+            ax_cmd.invert_yaxis()
+            ax_cmd.plot(iso['B_V_100'], iso['V_100'], label=r'1x$10^{8}$ yr')
+            ax_cmd.plot(iso['B_V_200'], iso['V_200'], c='Black', alpha=0.1)
+            ax_cmd.plot(iso['B_V_300'], iso['V_300'], c='Black', alpha=0.1)
+            ax_cmd.plot(iso['B_V_400'], iso['V_400'], c='Black', alpha=0.1)
+            ax_cmd.plot(iso['B_V_500'], iso['V_500'], label=r'5x$10^{8}$ yr')
+            ax_cmd.plot(iso['B_V_600'], iso['V_600'], c='Black', alpha=0.1)
+            ax_cmd.plot(iso['B_V_700'], iso['V_700'], c='Black', alpha=0.1)
+            ax_cmd.plot(iso['B_V_800'], iso['V_800'], c='Black', alpha=0.1)
+            ax_cmd.plot(iso['B_V_900'], iso['V_900'], c='Black', alpha=0.1)
+            ax_cmd.plot(iso['B_V_1000'], iso['V_1000'], label=r'1x$10^{9}$ yr')
+            ax_cmd.scatter(r - sbr.val, g - sdm.val, s=5, marker='s', c='w', edgecolor='black')
+            ax_cmd.legend()
+            ax_cmd.set_ylabel(r'$M_{V}$')
+            ax_cmd.set_xlabel(r'$B-V$')
+            draw()
+
+        sdm.on_changed(update)
+        sbr.on_changed(update)
+
+        show()
+
+    def iso_match2(self):
+        """Create adjustable CMD diagram to determine approximate cluster age and reddening"""
+
+        pickle_in = open("dict.pickle", "rb")
+        iso_stats = pickle.load(pickle_in)
+        fig9, ax_cmd = plt.subplots()
+        iso = pd.read_csv(download_dir + r'\iso\iso_00.csv')
+        plt.subplots_adjust(left=0.2, bottom=0.25)
+        dm = (-5) + 5 * np.log10(iso_stats['cluster_d'])
+        g = self['m_v_tycho']
+        r = self['b_v']
+        dminit = dm
+        brinit = 0
+
+        plt.rcParams['lines.linewidth'] = 0.5
+        plt.rcParams['lines.linestyle'] = '--'
+        ax_cmd.set_ylim(-5, 9)
+        ax_cmd.invert_yaxis()
+
+        ax_cmd.plot(iso['B_V_100'], iso['V_100'], label=r'1x$10^{8}$ yr')
+        ax_cmd.plot(iso['B_V_200'], iso['V_200'], c='Black', alpha=0.1)
+        ax_cmd.plot(iso['B_V_300'], iso['V_300'], c='Black', alpha=0.1)
+        ax_cmd.plot(iso['B_V_400'], iso['V_400'], c='Black', alpha=0.1)
+        ax_cmd.plot(iso['B_V_500'], iso['V_500'], label=r'5x$10^{8}$ yr')
+        ax_cmd.plot(iso['B_V_600'], iso['V_600'], c='Black', alpha=0.1)
+        ax_cmd.plot(iso['B_V_700'], iso['V_700'], c='Black', alpha=0.1)
+        ax_cmd.plot(iso['B_V_800'], iso['V_800'], c='Black', alpha=0.1)
+        ax_cmd.plot(iso['B_V_900'], iso['V_900'], c='Black', alpha=0.1)
+        ax_cmd.plot(iso['B_V_1000'], iso['V_1000'], label=r'1x$10^{9}$ yr')
+        ax_cmd.scatter(r, g - dm, s=5, marker='s', c='w', edgecolor='black')
+        leg = ax_cmd.legend()
+        ax_cmd.set_ylabel(r'$M_{V}$')
+        ax_cmd.set_xlabel(r'$B-V$')
+
+        def update(sdm=dminit, sbr=brinit):
+            ax_cmd.cla()
+            ax_cmd.set_ylim(-5, 9)
+            ax_cmd.invert_yaxis()
+            ax_cmd.plot(iso['B_V_100'], iso['V_100'], label=r'1x$10^{8}$ yr')
+            ax_cmd.plot(iso['B_V_200'], iso['V_200'], c='Black', alpha=0.1)
+            ax_cmd.plot(iso['B_V_300'], iso['V_300'], c='Black', alpha=0.1)
+            ax_cmd.plot(iso['B_V_400'], iso['V_400'], c='Black', alpha=0.1)
+            ax_cmd.plot(iso['B_V_500'], iso['V_500'], label=r'5x$10^{8}$ yr')
+            ax_cmd.plot(iso['B_V_600'], iso['V_600'], c='Black', alpha=0.1)
+            ax_cmd.plot(iso['B_V_700'], iso['V_700'], c='Black', alpha=0.1)
+            ax_cmd.plot(iso['B_V_800'], iso['V_800'], c='Black', alpha=0.1)
+            ax_cmd.plot(iso['B_V_900'], iso['V_900'], c='Black', alpha=0.1)
+            ax_cmd.plot(iso['B_V_1000'], iso['V_1000'], label=r'1x$10^{9}$ yr')
+            ax_cmd.scatter(r - sbr, g - sdm, s=5, marker='s', c='w', edgecolor='black')
+            ax_cmd.legend()
+            ax_cmd.set_ylabel(r'$M_{V}$')
+            ax_cmd.set_xlabel(r'$B-V$')
+            fig9.canvas.draw()
+
+        interact(update, sdm=(0, 20, 0.1), sbr=(0, 1, 0.01))
+
+        fig9.show()
+        fig9.canvas.draw()

@@ -96,7 +96,7 @@ def search_name(name, radius=0.5, pm_r=2, dr=2):
     # Initialise data and store values in pickle
 
     simbad_stats = {'name': name, 'ra': ra_coord, 'dec': dec_coord, 'radius': radius, 'pmra': pmra, 'pmdec': pmdec,
-                    'pm_radius': pm_r, 'plx_value': plx, 'fe_h': fe_h}
+                    'pm_radius': pm_r, 'plx_value': plx, 'fe_h': fe_h, 'dr': dr}
     pickle_out = open("dict.pickle", "wb")
     pickle.dump(simbad_stats, pickle_out)
     pickle_out.close()
@@ -135,9 +135,15 @@ def load():
 
     data = pd.read_csv(download_dir + r'\output.csv')
     data = data.sort_values(by=['phot_g_mean_mag']).reset_index(drop=True)
+    pickle_in = open("dict.pickle", "rb")
+    g_data = pickle.load(pickle_in)
+    dr = g_data['dr']
 
-    # Adjust parallax for median offset (Lindegren, et al. 2018)
-    data['parallax'] = data['parallax'] + 0.029
+    # Adjust parallax for median offset in data (Lindegren, et al. 2018, 2020)
+    if dr == 2:
+        data['parallax'] = data['parallax'] + 0.029
+    else:
+        data['parallax'] = data['parallax'] + 0.017
 
     # Adjust parallax error to 2 sigma confidence level
 
@@ -150,18 +156,27 @@ def load():
 
     # Calculate M_v Tycho (Jordi, et al. 2010)
 
-    data['m_v_tycho'] = data['phot_g_mean_mag'] - (
-            (0.02157 * (data['bp_rp'] ** 3)) - (0.2346 * (data['bp_rp'] ** 2)) - (
-            0.06629 * data['bp_rp']) - 0.01842)
+    if dr == 2:
+        data['m_v_tycho'] = data['phot_g_mean_mag'] - (
+                (0.02157 * (data['bp_rp'] ** 3)) - (0.2346 * (data['bp_rp'] ** 2)) - (
+                    0.06629 * data['bp_rp']) - 0.01842)
+    else:
+        data['m_v_tycho'] = data['phot_g_mean_mag'] - (
+                (0.02342 * (data['bp_rp'] ** 3)) - (0.2387 * (data['bp_rp'] ** 2)) - (0.0682 * data['bp_rp']) - 0.01077)
 
     # Calculate (B - V) (Jordi, et al. 2010)
 
     data['b_v'] = 0.0043372 * (316.97 * np.sqrt(
-        10046700000000 * data['bp_rp'] ** 2 - 43399787980000 * data['bp_rp'] + 701395108514151) + 1004670000 * data[
-                                   'bp_rp'] - 2169989399) ** (1 / 3) - 17506 / (316.97 * np.sqrt(
-        10046700000000 * data['bp_rp'] ** 2 - 43399787980000 * data['bp_rp'] + 701395108514151) + 1004670000 * data[
-                                                                                    'bp_rp'] - 2169989399) ** (
-                          1 / 3) + 1.4699
+            10046700000000 * data['bp_rp'] ** 2 - 43399787980000 * data['bp_rp'] + 701395108514151) + 1004670000 * data[
+                                       'bp_rp'] - 2169989399) ** (1 / 3) - 17506 / (316.97 * np.sqrt(
+            10046700000000 * data['bp_rp'] ** 2 - 43399787980000 * data['bp_rp'] + 701395108514151) + 1004670000 * data[
+                                                                                        'bp_rp'] - 2169989399) ** (
+                              1 / 3) + 1.4699
+# else: data['b_v'] = (5451 * np.sqrt(3) * np.sqrt( 891402030000000000 * data['bp_rp'] ** 2 - 2049490307788600000 *
+    # data['bp_rp'] + 1494892818678820000) + 8914020300000 * data['bp_rp'] - 10247451538943) ** (1 / 3) / (5451 * 2
+    # ** (2 / 3) * 5 ** (1/3)) - (41332604 * 2 ** (2 / 3) * 5 ** (1 / 3)) / (5451 * (5451 * np.sqrt(3)*np.sqrt(
+    # 891402030000000000 * data['bp_rp'] ** 2 - 2049490307788600000 * data['bp_rp'] + 1494892818678820000) +
+    # 8914020300000 * data['bp_rp'] - 10247451538943) ** (1 / 3)) + 6176 / 5451
 
     # Calculate absolute magnitudes, temperature and luminosity
 
@@ -377,7 +392,7 @@ class Plotting:
         """Produces 3D plot of objects. If used with jupyter notebook, %matplotlib qt or %matplotlib notebook is
         required for interactivity."""
         dot_size = ((np.log10((self['lum_s'] * 1000))) - 2) ** 4
-        fig = plt.figure()
+        fig = plt.figure(figsize=(12, 12))
         ax = fig.add_subplot(1, 1, 1, projection="3d")
         x = self['ra']
         y = self['distance']
@@ -386,11 +401,11 @@ class Plotting:
         plt.show()
 
     def iso_match(self):
-        """Create adjustable CMD diagram to determine approximate cluster age and reddening"""
+        """Create adjustable CMD diagram to determine approximate cluster age and reddening using matplotlib"""
 
         pickle_in = open("dict.pickle", "rb")
         iso_stats = pickle.load(pickle_in)
-        fig9, ax_cmd = plt.subplots()
+        fig9, ax_cmd = plt.subplots(figsize=(12, 10))
         iso = pd.read_csv(download_dir + r'\iso\iso_00.csv')
         plt.subplots_adjust(left=0.2, bottom=0.25)
         dm = (-5) + 5 * np.log10(iso_stats['cluster_d'])
@@ -450,7 +465,7 @@ class Plotting:
         show()
 
     def iso_match2(self):
-        """Create adjustable CMD diagram to determine approximate cluster age and reddening"""
+        """Create adjustable CMD diagram to determine approximate cluster age and reddening using ipyWidgets"""
 
         pickle_in = open("dict.pickle", "rb")
         iso_stats = pickle.load(pickle_in)

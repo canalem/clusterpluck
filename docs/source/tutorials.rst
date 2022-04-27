@@ -6,6 +6,6 @@ Basics
 
 .. toctree::
 
-   Getting Started  </notebooks/1_GetStarted.ipynb>
-   More Advanced Open Cluster Searching & Analyses  </notebooks/2_OpenCluster.ipynb>
-   Globular Cluster Searching & Analyses  </notebooks/3_GlobularCluster.ipynb>
+   Open Cluster Name Search  </notebooks/1_NameSearch.ipynb>
+   Open Cluster Position Search  </notebooks/2_PositionSearch.ipynb>
+   Globular Cluster Search  </notebooks/3_GCSearch.ipynb>

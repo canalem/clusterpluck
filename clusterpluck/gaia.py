@@ -186,29 +186,7 @@ def load():
     data['t_k'] = ball.bv2T(data['bp_rp'])
     data['lum_s'] = (3.85e26 * (10 ** ((4.77 - data['abs']) / 2.5))) / 3.38e26
 
-    # Calculate cluster membership probability
-
-    centroids_pm = k_means(data[['pmra', 'pmdec']])
-    centroids_pos = k_means(data[['ra', 'dec']])
-
-    sd_x = pd.DataFrame.std(data['ra'])
-    sd_y = pd.DataFrame.std(data['dec'])
-    sd_z = pd.DataFrame.std(data['distance'])
-    sd_pmx = pd.DataFrame.std(data['pmra'])
-    sd_pmy = pd.DataFrame.std(data['pmdec'])
-    mean_d = data.loc[:, 'distance'].mean()
-    data['probx'] = (data['ra'] - centroids_pos[:, 0])
-    data['proby'] = (data['dec'] - centroids_pos[:, 1])
-    data['probz'] = np.abs((data['distance']) - mean_d)
-    data['probpmx'] = (data['pmra'] - centroids_pm[:, 0])
-    data['probpmy'] = (data['pmdec'] - centroids_pm[:, 1])
-    data['prob'] = (np.exp(-0.5 * ((data['probx'] / sd_x) ** 2 + (data['proby'] / sd_y) ** 2
-                                   + (data['probpmx'] / sd_pmx) ** 2 + (data['probpmy'] / sd_pmy) ** 2
-                                   + (data['probz'] / sd_z) ** 2))) * 100
-
-    data.drop(columns=['probx', 'proby', 'probz', 'probpmx', 'probpmy'], inplace=True)
-
-    # Calculate some stats and save to file
+    # Calculate some stats
 
     mu = np.mean(data['distance'])
     sigma = np.std(data['distance'])
@@ -229,6 +207,27 @@ def load():
     pickle.dump(hist_stats, pickle_out)
     pickle_out.close()
 
+    # Calculate cluster membership probability
+
+    centroids_pm = k_means(data[['pmra', 'pmdec']])
+    centroids_pos = k_means(data[['ra', 'dec']])
+
+    sd_x = pd.DataFrame.std(data['ra'])
+    sd_y = pd.DataFrame.std(data['dec'])
+    sd_z = pd.DataFrame.std(data['distance'])
+    sd_pmx = pd.DataFrame.std(data['pmra'])
+    sd_pmy = pd.DataFrame.std(data['pmdec'])
+    data['probx'] = (data['ra'] - centroids_pos[:, 0])
+    data['proby'] = (data['dec'] - centroids_pos[:, 1])
+    data['probz'] = np.abs((data['distance']) - cluster_d_p)
+    data['probpmx'] = (data['pmra'] - centroids_pm[:, 0])
+    data['probpmy'] = (data['pmdec'] - centroids_pm[:, 1])
+    data['prob'] = (np.exp(-0.5 * ((data['probx'] / sd_x) ** 2 + (data['proby'] / sd_y) ** 2
+                                   + (data['probpmx'] / sd_pmx) ** 2 + (data['probpmy'] / sd_pmy) ** 2
+                                   + (data['probz'] / sd_z) ** 2))) * 100
+
+    data.drop(columns=['probx', 'proby', 'probz', 'probpmx', 'probpmy'], inplace=True)
+
     # Save to CSV
 
     data.to_csv(download_dir + r'\complete.csv', index=None)
@@ -247,6 +246,27 @@ class Refine:
         df = self[self['prob'] > pb]
         df.to_csv(download_dir + r'\high_prob.csv', index=None)
         print('Number of stars with prob > {:.0f}%: {:.0f}'.format(pb, len(df)))
+
+        # Calculate some stats
+
+        mu = np.mean(df['distance'])
+        sigma = np.std(df['distance'])
+        dist_med = np.median(df['distance'])
+        conf = stats.norm.interval(0.95, loc=mu, scale=sigma)
+        density = gaussian_kde(df['distance'])
+        d_near_pc = df['distance'].min()
+        d_far_pc = df['distance'].max()
+        xs = np.linspace(d_near_pc, d_far_pc, 1000)
+        ys = density(xs)
+        dist_index = np.argmax(ys)
+        cluster_d_p = xs[dist_index]
+
+        # Initialise data and store in pickle
+
+        hist_stats_prob = {'mu': mu, 'sigma': sigma, 'dist_med': dist_med, 'conf': conf, 'cluster_d': cluster_d_p}
+        pickle_out = open("dict.pickle_prob", "wb")
+        pickle.dump(hist_stats_prob, pickle_out)
+        pickle_out.close()
 
         return df
 
@@ -389,8 +409,46 @@ class Plotting:
             r'mode=%.2f' % (x_max,)))
         ax.text(0.85, 0.95, textstr, transform=ax.transAxes, fontsize=12, verticalalignment='top')
 
+    def d_hist_ref(self):
+        """Produces histogram of object distances derived from refined parallax with information plotted such as mean,
+        median and mode, etc."""
+        pickle_in = open("dict.pickle_prob", "rb")
+        hist_stats_prob = pickle.load(pickle_in)
+        sigma = hist_stats_prob['sigma']
+        mu = hist_stats_prob['mu']
+        dist_med = hist_stats_prob['dist_med']
+        fig = plt.figure()
+        ax = fig.add_subplot()
+        n, bins, patches = ax.hist(self['distance'], bins=50)
+        nmax = np.max(n)
+        arg_max = None
+        for j, _n in enumerate(n):
+            if _n == nmax:
+                arg_max = j
+                break
+        x_max = bins[arg_max]
+        plt.close()
+        fig, ax = plt.subplots(figsize=(12, 8))
+        n, bins, patches = ax.hist(self['distance'], bins='auto', density=1, color='w', edgecolor='black')
+        y = ((1 / (np.sqrt(2 * np.pi) * sigma)) * np.exp(-0.5 * (1 / sigma * (bins - mu)) ** 2))
+        plt.axvline(mu, color='blue', linestyle='--', linewidth=1)
+        plt.axvline(dist_med, color='green', linestyle=':', linewidth=1)
+        plt.axvline(x_max, color='yellow', linestyle=':', linewidth=1)
+        ax.plot(bins, y, color='blue', linestyle='--', linewidth=1)
+        ax.set_xlabel('Distance / pc', fontsize=12)
+        plt.yticks([])
+        ax.set_title('Distance to Stars in Search Area', fontsize=18)
+        fig.tight_layout()
+        textstr = '\n'.join((
+            r'$\mu=%.2f$' % (mu,),
+            r'$\sigma=%.2f$' % (sigma,),
+            r'median=%.2f' % (dist_med,),
+            r'mode=%.2f' % (x_max,)))
+        ax.text(0.85, 0.95, textstr, transform=ax.transAxes, fontsize=12, verticalalignment='top')
+
     def three_d(self):
-        """Produces 3D plot of objects. If used with jupyter notebook, %matplotlib qt is required for interactivity."""
+        """Produces 3D plot of objects. If used with jupyter notebook, %matplotlib notebook is required for
+        interactivity."""
         dot_size = ((np.log10((self['lum_s'] * 1000))) - 2) ** 4
         fig = plt.figure(figsize=(12, 12))
         ax = fig.add_subplot(1, 1, 1, projection="3d")
@@ -401,8 +459,8 @@ class Plotting:
         plt.show()
 
     def iso_match_alt(self):
-        """Create pop out, adjustable CMD diagram to determine approximate cluster age and reddening using matplotlib.
-        Requires %matplotlib qt."""
+        """Create adjustable CMD diagram to determine approximate cluster age and reddening using matplotlib.
+        Requires %matplotlib notebook."""
         pickle_in = open("dict.pickle", "rb")
         iso_stats = pickle.load(pickle_in)
         fig9, ax_cmd = plt.subplots(figsize=(12, 10))

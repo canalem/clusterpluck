@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
-from ipywidgets import interact
+from ipywidgets import interact, Layout, FloatSlider
 import ipywidgets as widgets
 import scipy.stats as stats
 import pickle
@@ -16,6 +16,7 @@ from pylab import *
 from matplotlib.pyplot import axes
 from scipy.stats import gaussian_kde
 from .cp_clustering import k_means, dp
+from IPython.display import display, clear_output
 
 home_dir = str(os.getcwd())
 download_dir = home_dir + r'\clusterpluck\data'
@@ -342,13 +343,13 @@ class Plotting:
 
     def cmd(self):
         """Produces a Pandas scatter plot as a Colour Magnitude Diagram using original Gaia filters."""
-        ax = self.plot.scatter(x='bp_rp', y='phot_g_mean_mag', s=3, alpha=0.25, figsize=(8, 8))
+        ax = self.plot.scatter(x='bp_rp', y='phot_g_mean_mag', s=3, alpha=0.25, figsize=(10, 10))
         ax.invert_yaxis()
 
     def cmd2(self):
         """Produces a Pandas scatter plot as a Colour Magnitude Diagram using values converted to more standardised
         filters (Tycho Vmag and Johnson B-V colour index)."""
-        ax = self.plot.scatter(x='b_v', y='m_v_tycho', s=3, alpha=0.25, figsize=(8, 8))
+        ax = self.plot.scatter(x='b_v', y='m_v_tycho', s=3, alpha=0.25, figsize=(10, 10))
         ax.invert_yaxis()
 
     def d_hist(self):
@@ -370,27 +371,26 @@ class Plotting:
                 break
         x_max = bins[arg_max]
         plt.close()
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(12, 8))
         n, bins, patches = ax.hist(self['distance'], bins='auto', density=1, color='w', edgecolor='black')
         y = ((1 / (np.sqrt(2 * np.pi) * sigma)) * np.exp(-0.5 * (1 / sigma * (bins - mu)) ** 2))
         plt.axvline(mu, color='blue', linestyle='--', linewidth=1)
         plt.axvline(dist_med, color='green', linestyle=':', linewidth=1)
         plt.axvline(x_max, color='yellow', linestyle=':', linewidth=1)
         ax.plot(bins, y, color='blue', linestyle='--', linewidth=1)
-        ax.set_xlabel('Distance / pc')
+        ax.set_xlabel('Distance / pc', fontsize=12)
         plt.yticks([])
-        ax.set_title('Distance to Stars in Search Area', fontsize=12)
+        ax.set_title('Distance to Stars in Search Area', fontsize=18)
         fig.tight_layout()
         textstr = '\n'.join((
             r'$\mu=%.2f$' % (mu,),
             r'$\sigma=%.2f$' % (sigma,),
             r'median=%.2f' % (dist_med,),
             r'mode=%.2f' % (x_max,)))
-        ax.text(0.85, 0.95, textstr, transform=ax.transAxes, fontsize=7, verticalalignment='top')
+        ax.text(0.85, 0.95, textstr, transform=ax.transAxes, fontsize=12, verticalalignment='top')
 
     def three_d(self):
-        """Produces 3D plot of objects. If used with jupyter notebook, %matplotlib qt or %matplotlib notebook is
-        required for interactivity."""
+        """Produces 3D plot of objects. If used with jupyter notebook, %matplotlib qt is required for interactivity."""
         dot_size = ((np.log10((self['lum_s'] * 1000))) - 2) ** 4
         fig = plt.figure(figsize=(12, 12))
         ax = fig.add_subplot(1, 1, 1, projection="3d")
@@ -400,9 +400,9 @@ class Plotting:
         ax.scatter(x, y, z, marker='o', s=dot_size, c='blue')
         plt.show()
 
-    def iso_match(self):
-        """Create adjustable CMD diagram to determine approximate cluster age and reddening using matplotlib"""
-
+    def iso_match_alt(self):
+        """Create pop out, adjustable CMD diagram to determine approximate cluster age and reddening using matplotlib.
+        Requires %matplotlib qt."""
         pickle_in = open("dict.pickle", "rb")
         iso_stats = pickle.load(pickle_in)
         fig9, ax_cmd = plt.subplots(figsize=(12, 10))
@@ -464,12 +464,13 @@ class Plotting:
 
         show()
 
-    def iso_match2(self):
-        """Create adjustable CMD diagram to determine approximate cluster age and reddening using ipyWidgets"""
+    def iso_match(self):
+        """Create adjustable CMD diagram to determine approximate cluster age and reddening using ipyWidgets. Can be
+        used inline within a Jupyter notebook."""
 
         pickle_in = open("dict.pickle", "rb")
         iso_stats = pickle.load(pickle_in)
-        fig9, ax_cmd = plt.subplots()
+        fig9, ax_cmd = plt.subplots(figsize=(12, 10))
         iso = pd.read_csv(download_dir + r'\iso\iso_00.csv')
         plt.subplots_adjust(left=0.2, bottom=0.25)
         dm = (-5) + 5 * np.log10(iso_stats['cluster_d'])
@@ -477,26 +478,13 @@ class Plotting:
         r = self['b_v']
         dminit = dm
         brinit = 0
+        out = widgets.Output(layout=widgets.Layout())
 
         plt.rcParams['lines.linewidth'] = 0.5
         plt.rcParams['lines.linestyle'] = '--'
         ax_cmd.set_ylim(-5, 9)
         ax_cmd.invert_yaxis()
-
-        ax_cmd.plot(iso['B_V_100'], iso['V_100'], label=r'1x$10^{8}$ yr')
-        ax_cmd.plot(iso['B_V_200'], iso['V_200'], c='Black', alpha=0.1)
-        ax_cmd.plot(iso['B_V_300'], iso['V_300'], c='Black', alpha=0.1)
-        ax_cmd.plot(iso['B_V_400'], iso['V_400'], c='Black', alpha=0.1)
-        ax_cmd.plot(iso['B_V_500'], iso['V_500'], label=r'5x$10^{8}$ yr')
-        ax_cmd.plot(iso['B_V_600'], iso['V_600'], c='Black', alpha=0.1)
-        ax_cmd.plot(iso['B_V_700'], iso['V_700'], c='Black', alpha=0.1)
-        ax_cmd.plot(iso['B_V_800'], iso['V_800'], c='Black', alpha=0.1)
-        ax_cmd.plot(iso['B_V_900'], iso['V_900'], c='Black', alpha=0.1)
-        ax_cmd.plot(iso['B_V_1000'], iso['V_1000'], label=r'1x$10^{9}$ yr')
-        ax_cmd.scatter(r, g - dm, s=5, marker='s', c='w', edgecolor='black')
-        leg = ax_cmd.legend()
-        ax_cmd.set_ylabel(r'$M_{V}$')
-        ax_cmd.set_xlabel(r'$B-V$')
+        plt.close()
 
         def update(sdm=dminit, sbr=brinit):
             ax_cmd.cla()
@@ -516,9 +504,7 @@ class Plotting:
             ax_cmd.legend()
             ax_cmd.set_ylabel(r'$M_{V}$')
             ax_cmd.set_xlabel(r'$B-V$')
-            fig9.canvas.draw()
+            out.clear_output(wait=True)
+            display(fig9, out)
 
-        interact(update, sdm=(0, 20, 0.1), sbr=(0, 1, 0.01))
-
-        fig9.show()
-        fig9.canvas.draw()
+        interact(update, sdm=FloatSlider(value=dminit, min=0, max=20, step=0.1, layout=Layout(width='75%'), description='Dist_Mod:'), sbr=FloatSlider(value=brinit, min=0, max=1, step=0.01, layout=Layout(width='75%'), description='Reddening:'))

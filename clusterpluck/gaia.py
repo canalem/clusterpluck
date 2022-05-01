@@ -71,6 +71,12 @@ def search(ra_input, dec_input, radius=0.5, pmra=0, pmdec=0, pm_r=10, d_near=1, 
         print('PM_RA:', pmra, 'PM_Dec:', pmdec, 'PM_Rad:', pm_r)
         print('Distance range: {:.0f} pc to {:.0f} pc'.format(d_near, d_far))
 
+    stats = {'ra': ra_coord, 'dec': dec_coord, 'radius': radius, 'pmra': pmra, 'pmdec': pmdec,
+             'pm_radius': pm_r, 'dr': dr}
+    pickle_out = open("dict.pickle", "wb")
+    pickle.dump(stats, pickle_out)
+    pickle_out.close()
+
 
 def search_name(name, radius=0.5, pm_r=2, dr=2):
     """Sends a cluster name, view radius and optional proper motion radius query to SIMBAD to download position,
@@ -160,7 +166,7 @@ def load():
     if dr == 2:
         data['m_v_tycho'] = data['phot_g_mean_mag'] - (
                 (0.02157 * (data['bp_rp'] ** 3)) - (0.2346 * (data['bp_rp'] ** 2)) - (
-                    0.06629 * data['bp_rp']) - 0.01842)
+                0.06629 * data['bp_rp']) - 0.01842)
     else:
         data['m_v_tycho'] = data['phot_g_mean_mag'] - (
                 (0.02342 * (data['bp_rp'] ** 3)) - (0.2387 * (data['bp_rp'] ** 2)) - (0.0682 * data['bp_rp']) - 0.01077)
@@ -168,12 +174,13 @@ def load():
     # Calculate (B - V) (Jordi, et al. 2010)
 
     data['b_v'] = 0.0043372 * (316.97 * np.sqrt(
-            10046700000000 * data['bp_rp'] ** 2 - 43399787980000 * data['bp_rp'] + 701395108514151) + 1004670000 * data[
-                                       'bp_rp'] - 2169989399) ** (1 / 3) - 17506 / (316.97 * np.sqrt(
-            10046700000000 * data['bp_rp'] ** 2 - 43399787980000 * data['bp_rp'] + 701395108514151) + 1004670000 * data[
-                                                                                        'bp_rp'] - 2169989399) ** (
-                              1 / 3) + 1.4699
-# else: data['b_v'] = (5451 * np.sqrt(3) * np.sqrt( 891402030000000000 * data['bp_rp'] ** 2 - 2049490307788600000 *
+        10046700000000 * data['bp_rp'] ** 2 - 43399787980000 * data['bp_rp'] + 701395108514151) + 1004670000 * data[
+                                   'bp_rp'] - 2169989399) ** (1 / 3) - 17506 / (316.97 * np.sqrt(
+        10046700000000 * data['bp_rp'] ** 2 - 43399787980000 * data['bp_rp'] + 701395108514151) + 1004670000 * data[
+                                                                                    'bp_rp'] - 2169989399) ** (
+                          1 / 3) + 1.4699
+
+    # else: data['b_v'] = (5451 * np.sqrt(3) * np.sqrt( 891402030000000000 * data['bp_rp'] ** 2 - 2049490307788600000 *
     # data['bp_rp'] + 1494892818678820000) + 8914020300000 * data['bp_rp'] - 10247451538943) ** (1 / 3) / (5451 * 2
     # ** (2 / 3) * 5 ** (1/3)) - (41332604 * 2 ** (2 / 3) * 5 ** (1 / 3)) / (5451 * (5451 * np.sqrt(3)*np.sqrt(
     # 891402030000000000 * data['bp_rp'] ** 2 - 2049490307788600000 * data['bp_rp'] + 1494892818678820000) +
@@ -200,13 +207,6 @@ def load():
     dist_index = np.argmax(ys)
     cluster_d_p = xs[dist_index]
 
-    # Initialise data and store in pickle
-
-    hist_stats = {'mu': mu, 'sigma': sigma, 'dist_med': dist_med, 'conf': conf, 'cluster_d': cluster_d_p}
-    pickle_out = open("dict.pickle", "wb")
-    pickle.dump(hist_stats, pickle_out)
-    pickle_out.close()
-
     # Calculate cluster membership probability
 
     centroids_pm = k_means(data[['pmra', 'pmdec']])
@@ -227,6 +227,46 @@ def load():
                                    + (data['probz'] / sd_z) ** 2))) * 100
 
     data.drop(columns=['probx', 'proby', 'probz', 'probpmx', 'probpmy'], inplace=True)
+
+    # SIMBAD!!! Build a SIMBAD database of objects in the FOV.
+
+    pickle_in = open("dict.pickle", "rb")
+    cluster_stats = pickle.load(pickle_in)
+    ra_coord = cluster_stats['ra']
+    dec_coord = cluster_stats['dec']
+    radius = cluster_stats['radius']
+
+    customSimbad = Simbad()
+    customSimbad.add_votable_fields('otypes')
+
+    result_table2 = customSimbad.query_region(SkyCoord(ra=ra_coord, dec=dec_coord,
+                                                       unit=(u.deg, u.deg), frame='icrs'), radius * u.deg)
+    raValue2 = result_table2['RA']
+    decValue2 = result_table2['DEC']
+    coord2 = SkyCoord(ra=raValue2, dec=decValue2, unit=(u.hour, u.degree), frame='icrs')
+    ra_coord2 = coord2.ra.deg
+    dec_coord2 = coord2.dec.deg
+    dfid = pd.DataFrame(result_table2['MAIN_ID'], columns=['Name'], dtype="string")
+    dfot = pd.DataFrame(result_table2['OTYPES'], columns=['Otypes'], dtype="string")
+    dfra = pd.DataFrame(ra_coord2, columns=['ra'])
+    dfdec = pd.DataFrame(dec_coord2, columns=['dec'])
+    df_simbad = pd.concat([dfid, dfot, dfra, dfdec], axis=1, sort=False)
+
+    data.insert(0, 'name', '', True)
+    data.insert(1, 'otypes', '', True)
+
+    for row in df_simbad.itertuples():
+        for row2 in data.itertuples():
+            if (row2.ra - 0.00015) < row.ra < (row2.ra + 0.00015) and (row2.dec - 0.00015) < row.dec < (row2.dec + 0.00015):
+                data.at[row2[0], 'name'] = row.Name
+                data.at[row2[0], 'otypes'] = row.Otypes
+
+    # Initialise data and store in pickle
+
+    hist_stats = {'mu': mu, 'sigma': sigma, 'dist_med': dist_med, 'conf': conf, 'cluster_d': cluster_d_p}
+    pickle_out = open("dict.pickle", "wb")
+    pickle.dump(hist_stats, pickle_out)
+    pickle_out.close()
 
     # Save to CSV
 
@@ -565,4 +605,7 @@ class Plotting:
             out.clear_output(wait=True)
             display(fig9, out)
 
-        interact(update, sdm=FloatSlider(value=dminit, min=0, max=20, step=0.1, layout=Layout(width='75%'), description='Dist_Mod:'), sbr=FloatSlider(value=brinit, min=0, max=1, step=0.01, layout=Layout(width='75%'), description='Reddening:'))
+        interact(update, sdm=FloatSlider(value=dminit, min=0, max=20, step=0.1, layout=Layout(width='75%'),
+                                         description='Dist_Mod:'),
+                 sbr=FloatSlider(value=brinit, min=0, max=1, step=0.01, layout=Layout(width='75%'),
+                                 description='Reddening:'))

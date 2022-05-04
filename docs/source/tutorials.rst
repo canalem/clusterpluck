@@ -1,7 +1,7 @@
 Tutorials
 =========
 
-Basics
+The Basics
 -------------------------
 
 Test

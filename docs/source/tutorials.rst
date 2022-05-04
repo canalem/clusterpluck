@@ -2,9 +2,7 @@ Tutorials
 =========
 
 The Basics
--------------------------
-
-Test
+----------
 
 .. toctree::
    :maxdepth: 2

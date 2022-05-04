@@ -4,6 +4,8 @@ Tutorials
 Basics
 -------------------------
 
+Test
+
 .. toctree::
    :maxdepth: 2
 

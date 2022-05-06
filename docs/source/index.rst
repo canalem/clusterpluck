@@ -13,5 +13,5 @@ Contents
 
 .. toctree::
 
-   Installation
-   The Tutorials
+   Installation <installation>
+   The Tutorials <tutorials>

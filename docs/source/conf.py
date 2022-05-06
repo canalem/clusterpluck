@@ -8,7 +8,7 @@ import sphinx_rtd_theme
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-sys.path.insert(0, os.path.abspath('/home/docs/checkouts/readthedocs.org/user_builds/clusterpluck/checkouts/latest/docs/source/'))
+sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information
 

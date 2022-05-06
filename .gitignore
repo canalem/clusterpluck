@@ -1,6 +1,4 @@
 /clusterpluck/data/
-/*.ipynb
-/tutorials/*.ipynb
-/tutorials/.ipynb_checkpoints/
 /dict.pickle
-/tutorials/
+docs/build/
+docs/source/_templates/

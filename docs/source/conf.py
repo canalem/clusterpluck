@@ -2,7 +2,7 @@
 
 # -- Project information
 
-project = 'clusterpluck'
+project = 'ClusterPluck'
 copyright = '2022, Marc Canale'
 author = 'Marc Canale'
 

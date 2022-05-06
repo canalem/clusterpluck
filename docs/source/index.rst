@@ -12,7 +12,6 @@ Contents
 --------
 
 .. toctree::
-   :maxdepth: 2
 
-   Installation <installation>
-   The Tutorials <tutorials>
+   Installation
+   The Tutorials

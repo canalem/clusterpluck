@@ -15,4 +15,3 @@ Contents
 
    Installation <installation>
    The Tutorials <tutorials>
-   Open Cluster Name Search <1_NameSearch.ipynb>

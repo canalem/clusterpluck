@@ -1,12 +1,13 @@
 # Minimal makefile for Sphinx documentation
 #
 
-# You can set these variables from the command line, and also
-# from the environment for the first two.
-SPHINXOPTS    ?=
-SPHINXBUILD   ?= sphinx-build
+# You can set these variables from the command line.
+#SPHINXOPTS    = -j auto    # PARALLEL BUILDS DO NOT WORK IN RECENT SPHINX VERSIONS DUE TO A SECURITY ISSUE
+SPHINXOPTS    =
+SPHINXBUILD   = poetry run python -m sphinx
+SPHINXPROJ    = clusterpluck
 SOURCEDIR     = source
-BUILDDIR      = build
+BUILDDIR      = ../../clusterpluck-docs
 
 # Put it first so that "make" without argument is like "make help".
 help:
@@ -18,3 +19,18 @@ help:
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	cp ../pyproject.toml $(BUILDDIR)/html
+
+notebooks:
+	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O) -D nbsphinx_execute='always'
+
+# ghp-import can be installed with pip as pip install ghp-import
+upload:
+	ghp-import -m "Update docs" $(BUILDDIR)/html
+	git push origin gh-pages
+
+clean:
+	# Remove previous output
+	-rm -rf $(BUILDDIR)/*
+	# Force autogenerating the API docs
+	-rm source/reference/api/*

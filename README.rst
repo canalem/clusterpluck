@@ -4,17 +4,6 @@ Simple, user-friendly python project to isolate and analyse Gaia DR2 and EDR3 cl
 
 In its current form it can be used to find, download and plot star data in the form of CSV table and CMDs, proper motion scatter plots and distance kernel density graphs. The estimated cluster distance is extracted based on a simple inversion of the parallax with a zero point error correction.
 
-Currently working on making available as package for initial alpha release.
+You can read the beta documentation here_.
 
-Packages Required
------------------
-- pandas
-- numpy
-- seaborn
-- ipywidgets
-- scipy
-- astropy
-- astroquery
-- matplotlib
-- pyastronomy
-- scikit-learn
+.. _here: https://clusterpluck.readthedocs.io/en/latest/

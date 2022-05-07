@@ -7,4 +7,4 @@ Basics
 .. toctree::
    :maxdepth: 2
 
-   Getting Started  </notebooks/1_NameSearch.ipynb>
+   How to conduct a simple name search  </notebooks/1_NameSearch.ipynb>

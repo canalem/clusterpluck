@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="1be303c9-3399-48e6-9419-464dd05303e5" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.nojekyll" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Makefile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doctrees/environment.pickle" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/doctrees/index.doctree" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/.buildinfo" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/_sources/index.rst.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/_static/alabaster.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/_static/basic.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/_static/custom.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/_static/doctools.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/_static/documentation_options.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/_static/file.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/_static/jquery-3.5.1.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/_static/jquery.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/_static/language_data.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/_static/minus.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/_static/plus.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/_static/pygments.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/_static/searchtools.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/_static/underscore-1.13.1.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/_static/underscore.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/genindex.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/index.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/objects.inv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/search.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/html/searchindex.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/make.bat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/source/conf.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/source/index.rst" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectId" id="28tVLcSZAnRzGwsIfTr4eOPpV1I" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true"
+  }
+}]]></component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="1be303c9-3399-48e6-9419-464dd05303e5" name="Changes" comment="" />
+      <created>1652035817077</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1652035817077</updated>
+    </task>
+    <servers />
+  </component>
+</project>

@@ -211,12 +211,13 @@ def load(no_simbad=0):
     # 891402030000000000 * data['bp_rp'] ** 2 - 2049490307788600000 * data['bp_rp'] + 1494892818678820000) +
     # 8914020300000 * data['bp_rp'] - 10247451538943) ** (1 / 3)) + 6176 / 5451
 
-    # Calculate absolute magnitudes, temperature and luminosity
+    # Calculate absolute magnitudes, temperature, luminosity and radius
 
     data['abs'] = (data['m_v_tycho'] + 5 + (5 * np.log10(data['parallax'] / 1000)))
     ball = pyasl.BallesterosBV_T()
     data['t_k'] = ball.bv2T(data['bp_rp'])
     data['lum_s'] = (3.85e26 * (10 ** ((4.77 - data['abs']) / 2.5))) / 3.38e26
+    data['rad_s'] = ((5780/data['t_k']) ** 2) * ((data['lum_s']) ** 0.5)
 
     # Calculate some stats
 

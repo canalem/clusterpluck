@@ -24,7 +24,7 @@ if not os.path.isdir(home_dir + r'\clusterpluck\data'):
     os.mkdir(r'clusterpluck\data')
 
 
-def search(ra_input, dec_input, radius=0.5, pmra=0, pmdec=0, pm_r=10, d_near=1, d_far=10000, dr=2):
+def search(ra_input, dec_input, radius=0.5, pmra=0, pmdec=0, pm_r=10, d_near=1, d_far=10000, dr=2, deg=0, hq=0):
     """Carry out a cone search using position, radius and optionally, proper motion and distance filters. Converts
     from HH MM SS to decimal degrees. Converts distances to parallax. Performs asynchronous query then saves table as
     a CSV. Prints search parameters as well as len(table). Arguments = RA, Dec, Radius, PM RA centroid,
@@ -33,9 +33,13 @@ def search(ra_input, dec_input, radius=0.5, pmra=0, pmdec=0, pm_r=10, d_near=1, 
         d_near = 1
     else:
         pass
-    coord = SkyCoord(ra=ra_input, dec=dec_input, unit=(u.hour, u.degree))
-    ra_coord = coord.ra.deg
-    dec_coord = coord.dec.deg
+    if deg == 0:
+        coord = SkyCoord(ra=ra_input, dec=dec_input, unit=(u.hour, u.degree))
+        ra_coord = coord.ra.deg
+        dec_coord = coord.dec.deg
+    else:
+        ra_coord = ra_input
+        dec_coord = dec_input
     pm_ra_min = pmra - pm_r
     pm_ra_max = pmra + pm_r
     pm_dec_min = pmdec - pm_r
@@ -48,18 +52,39 @@ def search(ra_input, dec_input, radius=0.5, pmra=0, pmdec=0, pm_r=10, d_near=1, 
     else:
         gaia = 'gaiaedr3.gaia_source'
 
-    query = """SELECT parallax, parallax_error, pmra, pmra_error, pmdec, pmdec_error, bp_rp, phot_g_mean_mag, ra, dec \
-                FROM {g} \
-                WHERE CONTAINS(POINT('ICRS',{g}.ra,{g}.dec),CIRCLE('ICRS',{ra},{dec},{area}))=1 \
-                AND bp_rp IS NOT NULL \
-                AND parallax<{ig_near} AND parallax>{ig_far} \
-                AND visibility_periods_used>8 \
-                AND pmra<{ra_max} AND pmra>{ra_min} \
-                AND pmdec<{dec_max} AND pmdec>{dec_min};""".format(g=gaia, ra=str(ra_coord), dec=str(dec_coord),
-                                                                   area=str(radius), ig_near=str(d_near_plx),
-                                                                   ig_far=str(d_far_plx),
-                                                                   ra_min=str(pm_ra_min), ra_max=str(pm_ra_max),
-                                                                   dec_min=str(pm_dec_min), dec_max=str(pm_dec_max))
+    if hq != 1:
+        query = """SELECT parallax, parallax_error, pmra, pmra_error, pmdec, pmdec_error, bp_rp, phot_g_mean_mag, ra, dec \
+                    FROM {g} \
+                    WHERE CONTAINS(POINT('ICRS',{g}.ra,{g}.dec),CIRCLE('ICRS',{ra},{dec},{area}))=1 \
+                    AND bp_rp IS NOT NULL \
+                    AND parallax<{ig_near} AND parallax>{ig_far} \
+                    AND visibility_periods_used>8 \
+                    AND pmra<{ra_max} AND pmra>{ra_min} \
+                    AND pmdec<{dec_max} AND pmdec>{dec_min};""".format(g=gaia, ra=str(ra_coord), dec=str(dec_coord),
+                                                                       area=str(radius), ig_near=str(d_near_plx),
+                                                                       ig_far=str(d_far_plx),
+                                                                       ra_min=str(pm_ra_min), ra_max=str(pm_ra_max),
+                                                                       dec_min=str(pm_dec_min), dec_max=str(pm_dec_max))
+    else:
+        query = """SELECT parallax, parallax_error, pmra, pmra_error, pmdec, pmdec_error, bp_rp, phot_g_mean_mag, ra, dec \
+                    FROM {g} \
+                    WHERE CONTAINS(POINT('ICRS',{g}.ra,{g}.dec),CIRCLE('ICRS',{ra},{dec},{area}))=1 \
+                    AND bp_rp IS NOT NULL \
+                    AND parallax<{ig_near} AND parallax>{ig_far} \
+                    AND visibility_periods_used>8 \
+		            AND phot_g_mean_flux_over_error>50 \
+		            AND phot_bp_mean_flux_over_error>20 \
+		            AND phot_rp_mean_flux_over_error>20 \
+		            AND phot_bp_rp_excess_factor<1.3+0.06*power(phot_bp_mean_mag-phot_rp_mean_mag,2) \
+		            AND phot_bp_rp_excess_factor>0.95+0.15*power(phot_bp_mean_mag-phot_rp_mean_mag,2) \
+		            AND astrometric_chi2_al/(astrometric_n_good_obs_al-5)<1.44*greatest(1,exp(-0.4*(phot_g_mean_mag-19.5)))
+                    AND pmra<{ra_max} AND pmra>{ra_min} \
+                    AND pmdec<{dec_max} AND pmdec>{dec_min};""".format(g=gaia, ra=str(ra_coord), dec=str(dec_coord),
+                                                                       area=str(radius), ig_near=str(d_near_plx),
+                                                                       ig_far=str(d_far_plx),
+                                                                       ra_min=str(pm_ra_min), ra_max=str(pm_ra_max),
+                                                                       dec_min=str(pm_dec_min), dec_max=str(pm_dec_max))
+
     job1 = Gaia.launch_job_async(query, dump_to_file=True, output_format="csv",
                                  output_file=download_dir + r'\output.csv')
     r = job1.get_results()
@@ -78,7 +103,7 @@ def search(ra_input, dec_input, radius=0.5, pmra=0, pmdec=0, pm_r=10, d_near=1, 
     pickle_out.close()
 
 
-def search_name(name, radius=0.5, pm_r=2, dr=2):
+def search_name(name, radius=0.5, pm_r=2, dr=2, hq=0):
     """Sends a cluster name, view radius and optional proper motion radius query to SIMBAD to download position,
     proper motion and distance information. Sends these to other functions to check for null values and so return
     defaults values. Once ready, sends values to search() function for Gaia query."""
@@ -108,7 +133,7 @@ def search_name(name, radius=0.5, pm_r=2, dr=2):
     pickle.dump(simbad_stats, pickle_out)
     pickle_out.close()
 
-    search(ra_coord, dec_coord, radius, pmra, pmdec, pm_r, d_near, d_far, dr)
+    search(ra_coord, dec_coord, radius, pmra, pmdec, pm_r, d_near, d_far, dr, hq)
 
 
 def distance_range(plx, radius):
@@ -136,7 +161,7 @@ def pm_range(pmra, pmdec, pm_r):
     return pmra, pmdec, pm_r
 
 
-def load():
+def load(no_simbad=0):
     """Loads initial output CSV from search() and adjusts/converts some values for plotting, etc."""
     # Load output table
 
@@ -230,36 +255,41 @@ def load():
 
     # SIMBAD!!! Build a SIMBAD database of objects in the FOV.
 
-    pickle_in = open("dict.pickle", "rb")
-    cluster_stats = pickle.load(pickle_in)
-    ra_coord = cluster_stats['ra']
-    dec_coord = cluster_stats['dec']
-    radius = cluster_stats['radius']
+    if no_simbad == 0:
+        pickle_in = open("dict.pickle", "rb")
+        cluster_stats = pickle.load(pickle_in)
+        ra_coord = cluster_stats['ra']
+        dec_coord = cluster_stats['dec']
+        radius = cluster_stats['radius']
 
-    customSimbad = Simbad()
-    customSimbad.add_votable_fields('otypes')
+        customSimbad = Simbad()
+        customSimbad.add_votable_fields('otypes')
 
-    result_table2 = customSimbad.query_region(SkyCoord(ra=ra_coord, dec=dec_coord,
-                                                       unit=(u.deg, u.deg), frame='icrs'), radius * u.deg)
-    raValue2 = result_table2['RA']
-    decValue2 = result_table2['DEC']
-    coord2 = SkyCoord(ra=raValue2, dec=decValue2, unit=(u.hour, u.degree), frame='icrs')
-    ra_coord2 = coord2.ra.deg
-    dec_coord2 = coord2.dec.deg
-    dfid = pd.DataFrame(result_table2['MAIN_ID'], columns=['Name'], dtype="string")
-    dfot = pd.DataFrame(result_table2['OTYPES'], columns=['Otypes'], dtype="string")
-    dfra = pd.DataFrame(ra_coord2, columns=['ra'])
-    dfdec = pd.DataFrame(dec_coord2, columns=['dec'])
-    df_simbad = pd.concat([dfid, dfot, dfra, dfdec], axis=1, sort=False)
+        result_table2 = customSimbad.query_region(SkyCoord(ra=ra_coord, dec=dec_coord,
+                                                           unit=(u.deg, u.deg), frame='icrs'), radius * u.deg)
+        raValue2 = result_table2['RA']
+        decValue2 = result_table2['DEC']
+        coord2 = SkyCoord(ra=raValue2, dec=decValue2, unit=(u.hour, u.degree), frame='icrs')
+        ra_coord2 = coord2.ra.deg
+        dec_coord2 = coord2.dec.deg
+        dfid = pd.DataFrame(result_table2['MAIN_ID'], columns=['Name'], dtype="string")
+        dfot = pd.DataFrame(result_table2['OTYPES'], columns=['Otypes'], dtype="string")
+        dfra = pd.DataFrame(ra_coord2, columns=['ra'])
+        dfdec = pd.DataFrame(dec_coord2, columns=['dec'])
+        df_simbad = pd.concat([dfid, dfot, dfra, dfdec], axis=1, sort=False)
 
-    data.insert(0, 'name', '', True)
-    data.insert(1, 'otypes', '', True)
+        data.insert(0, 'name', '', True)
+        data.insert(1, 'otypes', '', True)
 
-    for row in df_simbad.itertuples():
-        for row2 in data.itertuples():
-            if (row2.ra - 0.00015) < row.ra < (row2.ra + 0.00015) and (row2.dec - 0.00015) < row.dec < (row2.dec + 0.00015):
-                data.at[row2[0], 'name'] = row.Name
-                data.at[row2[0], 'otypes'] = row.Otypes
+        for row in df_simbad.itertuples():
+            for row2 in data.itertuples():
+                if (row2.ra - 0.00015) < row.ra < (row2.ra + 0.00015) and (row2.dec - 0.00015) < row.dec < (
+                        row2.dec + 0.00015):
+                    data.at[row2[0], 'name'] = row.Name
+                    data.at[row2[0], 'otypes'] = row.Otypes
+
+    else:
+        pass
 
     # Initialise data and store in pickle
 
@@ -313,6 +343,18 @@ class Refine:
     def pm_plot(self):
         """Produces Pandas scatter plot of proper motion values."""
         self.plot.scatter(x='pmra', y='pmdec', s=1, alpha=0.25)
+
+    def pm_plot2(self):
+        """Produces Pandas scatter plot of proper motion values and error bars."""
+        fig = plt.figure(figsize=(14, 10))
+        plt.scatter(self['pmra'], self['pmdec'], s=3, c='red')
+        plt.errorbar(self['pmra'], self['pmdec'], yerr=self['pmra_error'], xerr=self['pmdec_error'], linestyle="None",
+                     lw=1, c='red')
+        plt.xlabel('PM / RA')
+        plt.ylabel('PM / Dec')
+        plt.title('Proper Motions', fontsize=12)
+        plt.grid(True)
+        plt.show()
 
     def pm_kde(self):
         """Produces 2D Seaborn kernel distribution density plot of proper motion values."""

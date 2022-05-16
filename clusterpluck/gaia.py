@@ -264,7 +264,7 @@ def load(no_simbad=0):
         radius = cluster_stats['radius']
 
         customSimbad = Simbad()
-        customSimbad.add_votable_fields('otypes')
+        customSimbad.add_votable_fields('otypes', 'sp')
 
         result_table2 = customSimbad.query_region(SkyCoord(ra=ra_coord, dec=dec_coord,
                                                            unit=(u.deg, u.deg), frame='icrs'), radius * u.deg)
@@ -275,12 +275,14 @@ def load(no_simbad=0):
         dec_coord2 = coord2.dec.deg
         dfid = pd.DataFrame(result_table2['MAIN_ID'], columns=['Name'], dtype="string")
         dfot = pd.DataFrame(result_table2['OTYPES'], columns=['Otypes'], dtype="string")
+        dfsp = pd.DataFrame(result_table2['SP_TYPE'], columns=['Sp'], dtype="string")
         dfra = pd.DataFrame(ra_coord2, columns=['ra'])
         dfdec = pd.DataFrame(dec_coord2, columns=['dec'])
-        df_simbad = pd.concat([dfid, dfot, dfra, dfdec], axis=1, sort=False)
+        df_simbad = pd.concat([dfid, dfot, dfsp, dfra, dfdec], axis=1, sort=False)
 
         data.insert(0, 'name', '', True)
         data.insert(1, 'otypes', '', True)
+        data.insert(2, 'sp', '', True)
 
         for row in df_simbad.itertuples():
             for row2 in data.itertuples():
@@ -288,6 +290,7 @@ def load(no_simbad=0):
                         row2.dec + 0.00015):
                     data.at[row2[0], 'name'] = row.Name
                     data.at[row2[0], 'otypes'] = row.Otypes
+                    data.at[row2[0], 'sp'] = row.Sp
 
     else:
         pass

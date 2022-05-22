@@ -6,4 +6,4 @@ In its current form it can be used to find, download and plot star data in the f
 
 You can read the beta documentation here_.
 
-.. _here: https://clusterpluck.readthedocs.io/en/latest/
+.. _here: https://canalem.github.io/clusterpluck/

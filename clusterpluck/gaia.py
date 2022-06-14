@@ -94,7 +94,7 @@ def search(ra_input, dec_input, radius=0.5, pmra=0, pmdec=0, pm_r=10, d_near=1, 
         print('Distance range: {:.0f} pc to {:.0f} pc'.format(d_near, d_far))
 
     stats = {'ra': ra_coord, 'dec': dec_coord, 'radius': radius, 'pmra': pmra, 'pmdec': pmdec,
-             'pm_radius': pm_r, 'dr': dr}
+             'pm_radius': pm_r}
     pickle_out = open("dict.pickle", "wb")
     pickle.dump(stats, pickle_out)
     pickle_out.close()
@@ -125,12 +125,12 @@ def search_name(name, radius=0.5, pm_r=2, hq=0):
     # Initialise data and store values in pickle
 
     simbad_stats = {'name': name, 'ra': ra_coord, 'dec': dec_coord, 'radius': radius, 'pmra': pmra, 'pmdec': pmdec,
-                    'pm_radius': pm_r, 'plx_value': plx, 'fe_h': fe_h, 'dr': dr}
+                    'pm_radius': pm_r, 'plx_value': plx, 'fe_h': fe_h}
     pickle_out = open("dict.pickle", "wb")
     pickle.dump(simbad_stats, pickle_out)
     pickle_out.close()
 
-    search(ra_coord, dec_coord, radius, pmra, pmdec, pm_r, d_near, d_far, dr, hq)
+    search(ra_coord, dec_coord, radius, pmra, pmdec, pm_r, d_near, d_far, hq)
 
 
 def distance_range(plx, radius):
@@ -166,13 +166,10 @@ def load(no_simbad=0):
     data = data.sort_values(by=['phot_g_mean_mag']).reset_index(drop=True)
     pickle_in = open("dict.pickle", "rb")
     g_data = pickle.load(pickle_in)
-    dr = g_data['dr']
 
     # Adjust parallax for median offset in data (Lindegren, et al. 2018, 2020)
-    if dr == 2:
-        data['parallax'] = data['parallax'] + 0.029
-    else:
-        data['parallax'] = data['parallax'] + 0.017
+
+    data['parallax'] = data['parallax'] + 0.017
 
     # Adjust parallax error to 2 sigma confidence level
 
@@ -185,12 +182,7 @@ def load(no_simbad=0):
 
     # Calculate M_v Tycho (Jordi, et al. 2010)
 
-    if dr == 2:
-        data['m_v_tycho'] = data['phot_g_mean_mag'] - (
-                (0.02157 * (data['bp_rp'] ** 3)) - (0.2346 * (data['bp_rp'] ** 2)) - (
-                0.06629 * data['bp_rp']) - 0.01842)
-    else:
-        data['m_v_tycho'] = data['phot_g_mean_mag'] - (
+    data['m_v_tycho'] = data['phot_g_mean_mag'] - (
                 (0.02342 * (data['bp_rp'] ** 3)) - (0.2387 * (data['bp_rp'] ** 2)) - (0.0682 * data['bp_rp']) - 0.01077)
 
     # Calculate (B - V) (Jordi, et al. 2010)
@@ -202,13 +194,7 @@ def load(no_simbad=0):
                                                                                     'bp_rp'] - 2169989399) ** (
                           1 / 3) + 1.4699
 
-    # else: data['b_v'] = (5451 * np.sqrt(3) * np.sqrt( 891402030000000000 * data['bp_rp'] ** 2 - 2049490307788600000 *
-    # data['bp_rp'] + 1494892818678820000) + 8914020300000 * data['bp_rp'] - 10247451538943) ** (1 / 3) / (5451 * 2
-    # ** (2 / 3) * 5 ** (1/3)) - (41332604 * 2 ** (2 / 3) * 5 ** (1 / 3)) / (5451 * (5451 * np.sqrt(3)*np.sqrt(
-    # 891402030000000000 * data['bp_rp'] ** 2 - 2049490307788600000 * data['bp_rp'] + 1494892818678820000) +
-    # 8914020300000 * data['bp_rp'] - 10247451538943) ** (1 / 3)) + 6176 / 5451
-
-    # Calculate absolute magnitudes, temperature, luminosity and radius
+    # data['b_v'] = (2 ** (1 / 3) * 5 ** (2 / 3) * (5451 * np.sqrt(2674206090000000000 * data['bp_rp'] ** 2 - 6148470923365800000 * data['bp_rp'] + 4484678456036466249) + 8914020300000 * data['bp_rp'] - 10247451538943) ** (1 / 3) - (413326040 * 2 ** (2 / 3) * 5 ** (1 / 3)) / (5451 * np.sqrt(2674206090000000000 * data['bp_rp'] ** 2 - 6148470923365800000 * data['bp_rp'] + 4484678456036466249) + 8914020300000 * data['bp_rp'] - 10247451538943) ** (1 / 3) + 61760) / 54510
 
     data['abs'] = (data['m_v_tycho'] + 5 + (5 * np.log10(data['parallax'] / 1000)))
     ball = pyasl.BallesterosBV_T()
